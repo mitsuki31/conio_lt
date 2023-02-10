@@ -5,6 +5,7 @@
 ## DESCRIPTION
 `conio-lt` is a lite version of `conio.h` for **Linux**.<br>
 And intended only for **Termux** user.<br>
+<img src="https://www.freepnglogos.com/uploads/linux-png/difference-between-linux-and-window-operating-system-3.png" width="200" height="200"/>
 
 ## INSTALLATION
 ### Install the requirements
@@ -14,7 +15,6 @@ pkg update && pkg upgrade
 ```bash
 pkg install clang git -y
 ```
-
 ### Clone this repository
 ```bash
 git clone https://github.com/mitsuki31/conio-lt.git
