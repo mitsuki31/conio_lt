@@ -3,7 +3,7 @@
 **Version : 0.1.0**<br>
 
 ## DESCRIPTION
-`conio-lt` is a lite version of `conio.h` for **Linux**.<br>
+`conio_lt.h` is a lite version of `conio.h` for **Linux**.<br>
 And intended only for **Linux** user.<br>
 <img src="https://www.freepnglogos.com/uploads/linux-png/difference-between-linux-and-window-operating-system-3.png" width="200" height="200"/>
 
@@ -33,17 +33,17 @@ pkg install clang git -y
 ```
 ### Clone this repository
 ```bash
-git clone https://github.com/mitsuki31/conio-lt.git
+git clone https://github.com/mitsuki31/conio_lt.git
 ```
 
 ### Install as root
 > Must have an `Administrator` privileges:warning:
 ```bash
-cp conio-lt/conio_lt.h $HOME/usr/include
+cp conio_lt/conio_lt.h $HOME/usr/include
 ```
 
 ### Install as local
 ```bash
-cp conio-lt/conio_lt.h <path_to_your_project>
+cp conio_lt/conio_lt.h <path_to_your_project>
 ```
 > Change `<path_to_your_directory>` to your project directory<br>
