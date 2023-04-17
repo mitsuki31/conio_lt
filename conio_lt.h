@@ -102,7 +102,11 @@ class __CONIO_LT {
 
         // :: clrscr() -> void
         const void clrscr() {
-            printf("%s0m%s2J%s1;1f", __prefix, __prefix, __prefix);
+            /*
+            * "\033[1J" = clear entire screen permanently (cannot scrolled to up)
+            * "\033[2J" = clear entire screen but can be scrolled to up
+            */
+            printf("%s0m%s1J%s1;1f", __prefix, __prefix, __prefix);
         }
 
         // :: ungetch(char) -> int
