@@ -15,15 +15,14 @@
  * List Functions
  * --------------
  * <ul>
- *   <li> getch()
- *   <li> getche()
- *   <li> ungetch()
- *   <li> clrscr()
- *   <li> gotoxy()
- *   <li> wherex()
- *   <li> wherey()
- *   <li> putch()
- *   <li> putchar()
+ *   <li> #clrscr()
+ *   <li> #getch()
+ *   <li> #getche()
+ *   <li> #gotoxy(int, int)
+ *   <li> #putch(int)
+ *   <li> #ungetch(int)
+ *   <li> #wherex()
+ *   <li> #wherey()
  * </ul>
  * --------------
  *
@@ -236,9 +235,9 @@ const int wherey() {
  *
  * @since         0.1.0
  */
-const int putchar(const int __chr) {
+const int putch(const int __chr) {
     printf("%c", __chr);
-    return (int) __chr;
+    return __chr;
 }
 
 #endif /* CONIO_LT_H_ */
