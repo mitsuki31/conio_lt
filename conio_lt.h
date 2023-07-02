@@ -10,23 +10,21 @@
  * -------------
  * Similar like 'conio.h', but it's a lite version of 'conio.h'.
  * I hope this can be useful for your project or something else.
- *
- * Made with : Termux
- * OS type   : Android (aarch64-linux)
- * Clang ver : 15.0.7
  * ------------
  *
  * List Functions
  * --------------
- * :>  getch()
- * :>  getche()
- * :>  ungetch()
- * :>  clrscr()
- * :>  gotoxy()
- * :>  wherex()
- * :>  wherey()
- * :>  putch()
- * :>  putchar()
+ * <ul>
+ *   <li> getch()
+ *   <li> getche()
+ *   <li> ungetch()
+ *   <li> clrscr()
+ *   <li> gotoxy()
+ *   <li> wherex()
+ *   <li> wherey()
+ *   <li> putch()
+ *   <li> putchar()
+ * </ul>
  * --------------
  *
  */
@@ -112,6 +110,22 @@ static const void __whereis_xy(int &__x, int &__y) {
     /* Store and assign the cursor position */
     __x = x;
     __y = y;
+}
+
+
+
+/**
+ * @brief Moves the cursor to the specified coordinates on the terminal screen.
+ * This function moves the cursor on the terminal screen to the specified coordinates.
+ * It takes two integer parameters, \c __x and \c __y, representing the X and Y coordinates respectively.
+ *
+ * @param __x  The X-coordinate to move the cursor to.
+ * @param __y  The Y-coordinate to move the cursor to.
+ *
+ * @since      0.1.0
+ */
+const void gotoxy(const int __x, const int __y) {
+    printf("%s%d;%df", __prefix, __y, __x);
 }
 
 #endif /* CONIO_LT_H_ */
