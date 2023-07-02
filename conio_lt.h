@@ -195,4 +195,34 @@ const int getche() {
     return __getch(1);  /* non-zero means with echo */
 }
 
+/**
+ * @brief Retrieves the current X-coordinate of the cursor on the terminal screen.
+ * This function retrieves the current X-coordinate of the cursor on the terminal screen.
+ *
+ * @return Returns the X-coordinate of the cursor.
+ *
+ * @since  0.1.0
+ */
+const int wherex() {
+    int __x = 0, __y = 0;
+    __whereis_xy(&__x, &__y);
+
+    return __x;  /* only return the X-coordinate */
+}
+
+/**
+ * @brief Retrieves the current Y-coordinate of the cursor on the terminal screen.
+ * This function retrieves the current Y-coordinate of the cursor on the terminal screen.
+ *
+ * @return Returns the Y-coordinate of the cursor.
+ *
+ * @since  0.1.0
+ */
+const int wherey() {
+    int __x = 0, __y = 0;
+    __whereis_xy(&__x, &__y);
+
+    return __y;  /* only return the Y-coordinate */
+}
+
 #endif /* CONIO_LT_H_ */
