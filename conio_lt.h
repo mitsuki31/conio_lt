@@ -128,4 +128,26 @@ const void gotoxy(const int __x, const int __y) {
     printf("%s%d;%df", __prefix, __y, __x);
 }
 
+/**
+ * @brief Clears the terminal screen.
+ * This function clears the terminal screen by sending control sequences
+ * to the standard output using \c printf.
+ *
+ * <p>The function uses the following control sequences:
+ *
+ * <ul>
+ *   <li> \c "\033[0m": Resets any text formatting or color attributes.
+ *   <li> \c "\033[1J": Clears the screen from the cursor position to the end of the screen.
+ *   <li> \c "\033[1;1f": Moves the cursor to the top-left corner of the screen.
+ * </ul>
+ *
+ * <p>By combining these control sequences in a single \c printf statement,
+ * the function achieves the effect of clearing the terminal screen.
+ *
+ * @since 0.1.0
+ */
+const void clrscr() {
+    printf("%s0m%s1J%s1;1f", __prefix, __prefix, __prefix);
+}
+
 #endif /* CONIO_LT_H_ */
