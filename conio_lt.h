@@ -86,7 +86,7 @@ static const int __getch(unsigned int __echo) {
  *
  * @since           0.1.0
  */
-static const void __whereis_xy(int &__x, int &__y) {
+static void __whereis_xy(int *__x, int *__y) {
     int in, x = 0, y = 0;
     printf("%s6n", __prefix);
 
@@ -108,8 +108,8 @@ static const void __whereis_xy(int &__x, int &__y) {
     }
 
     /* Store and assign the cursor position */
-    __x = x;
-    __y = y;
+    *__x = x;
+    *__y = y;
 }
 
 
@@ -124,7 +124,7 @@ static const void __whereis_xy(int &__x, int &__y) {
  *
  * @since      0.1.0
  */
-const void gotoxy(const int __x, const int __y) {
+void gotoxy(const int __x, const int __y) {
     printf("%s%d;%df", __prefix, __y, __x);
 }
 
@@ -146,7 +146,7 @@ const void gotoxy(const int __x, const int __y) {
  *
  * @since 0.1.0
  */
-const void clrscr() {
+void clrscr() {
     printf("%s0m%s1J%s1;1f", __prefix, __prefix, __prefix);
 }
 
