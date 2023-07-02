@@ -150,4 +150,19 @@ const void clrscr() {
     printf("%s0m%s1J%s1;1f", __prefix, __prefix, __prefix);
 }
 
+/**
+ * @brief Pushes a character back onto the input stream.
+ * This function pushes a character back onto the input stream.
+ * It takes an integer parameter \c __c, representing the character to be pushed back.
+ *
+ * @param  __c  The character to be pushed back.
+ *
+ * @return      Returns the pushed-back character on success, or `EOF` on failure.
+ *
+ * @since       0.1.0
+ */
+const int ungetch(const int __c) {
+   return ungetc(__c, stdin);
+}
+
 #endif /* CONIO_LT_H_ */
