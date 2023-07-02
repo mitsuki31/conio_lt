@@ -160,6 +160,8 @@ void clrscr() {
  * @return      Returns the pushed-back character on success, or `EOF` on failure.
  *
  * @since       0.1.0
+ * @see         #getch()
+ * @see         #getche()
  */
 const int ungetch(const int __c) {
     return ungetc(__c, stdin);
@@ -172,9 +174,25 @@ const int ungetch(const int __c) {
  * @return Returns the character read from the standard input.
  *
  * @since  0.1.0
+ * @see    #getche()
+ * @see    #ungetch(int)
  */
 const int getch() {
     return __getch(0);  /* 0 means no echo */
+}
+
+/**
+ * @brief Reads a single character from the standard input and then echoing it.
+ * This function reads a single character from the standard input and then echoing it.
+ *
+ * @return Returns the character read from the standard input.
+ *
+ * @since  0.1.0
+ * @see    #getch()
+ * @see    #ungetch(int)
+ */
+const int getche() {
+    return __getch(1);  /* non-zero means with echo */
 }
 
 #endif /* CONIO_LT_H_ */
