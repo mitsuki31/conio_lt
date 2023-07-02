@@ -225,4 +225,20 @@ const int wherey() {
     return __y;  /* only return the Y-coordinate */
 }
 
+/**
+ * @brief Writes a character to the standard output.
+ * This function writes a character to the standard output.
+ * It takes an integer parameter \c __chr, representing the character to be written.
+ *
+ * @param  __chr  The character to be written.
+ *
+ * @return        Returns the written character as an integer.
+ *
+ * @since         0.1.0
+ */
+const int putchar(const int __chr) {
+    printf("%c", __chr);
+    return (int) __chr;
+}
+
 #endif /* CONIO_LT_H_ */
