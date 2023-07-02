@@ -162,7 +162,19 @@ const void clrscr() {
  * @since       0.1.0
  */
 const int ungetch(const int __c) {
-   return ungetc(__c, stdin);
+    return ungetc(__c, stdin);
+}
+
+/**
+ * @brief Reads a single character from the standard input without echoing it.
+ * This function reads a single character from the standard input without echoing it.
+ *
+ * @return Returns the character read from the standard input.
+ *
+ * @since  0.1.0
+ */
+const int getch() {
+    return __getch(0);  /* 0 means no echo */
 }
 
 #endif /* CONIO_LT_H_ */
