@@ -1,21 +1,14 @@
 /**
  * @file conio_lt.h
  *
- * Copyright (c) 2023 Ryuu Mitsuki
- * Authored and developed by Ryuu Mitsuki
- *
- * @version  0.1.5, 2 July 2023
- *
- * Description
- * -------------
  * Similar like 'conio.h', but it's a lite version of 'conio.h'.
  * I hope this can be useful for your project or something else.
- * ------------
  *
  * List Functions
  * --------------
  * <ul>
  *   <li> #clrscr()
+ *   <li> #rstscr()
  *   <li> #getch()
  *   <li> #getche()
  *   <li> #gotoxy(int, int)
@@ -24,8 +17,12 @@
  *   <li> #wherex()
  *   <li> #wherey()
  * </ul>
- * --------------
  *
+ * Created and developed by Ryuu Mitsuki
+ * Copyright (c) 2023-2024 Ryuu Mitsuki
+ *
+ * @author   Ryuu Mitsuki
+ * @version  0.2.0, 14 January 2024
  */
 
 #ifndef CONIO_LT_H_
@@ -147,6 +144,33 @@ void gotoxy(const int __x, const int __y) {
  */
 void clrscr() {
     printf("%s0m%s1J%s1;1f", __prefix, __prefix, __prefix);
+}
+
+/**
+ * @brief Resets and clears the terminal screen.
+ *
+ * This function resets any text formatting or color attributes,
+ * clears the entire terminal screen, and moves the cursor to the
+ * top-left corner. It achieves this effect by sending the appropriate
+ * control sequences to the standard output using \c printf.
+ *
+ * The function uses the following control sequences:
+ *   - \c "\033[0m": Resets any text formatting or color attributes.
+ *   - \c "\033c": Resets and clears the entire terminal screen.
+ *
+ * By combining these control sequences in a single \c printf statement,
+ * the function achieves the effect of resetting and clearing the terminal
+ * screen.
+ *
+ * @note  This function prevents the screen from scrolling by clearing
+ *        the entire screen. If you only want to clear the screen without
+ *        preventing scrolling, consider using the \c clrscr() function.
+ *
+ * @since 0.2.0
+ * @see   #clrscr(void)
+ */
+void rstscr(void) {
+    printf("%s0m\033c", __prefix);  /* "\033[0m\033c" */
 }
 
 /**
