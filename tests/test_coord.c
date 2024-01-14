@@ -16,5 +16,11 @@ int main(void) {
     /* Move the cursor back to its previous position */
     gotoxy(x, y);
     puts("Now I'm back");
+
+    printf("Current position: ");
+
+    /* Get current position of the cursor, then print to the console */
+    wherexy((cpos_t*) &x, (cpos_t*) &y);  /* Need conversion */
+    printf("X:%d Y:%d\n", x, y);
     return 0;
 }
