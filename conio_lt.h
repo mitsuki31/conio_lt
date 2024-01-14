@@ -30,11 +30,17 @@
 
 
 #include <stdio.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <termios.h>
 
-static const char* __prefix = "\033[";
+#define  cpos_t  unsigned int  /**< An abbreviation from Cursor Position Type.
+                                    Custom defined type to represent the
+                                    cursor position type.
+                                */
+
+static const char* __prefix = "\033[";  /**< Prefix for control sequences. Internal use only. */
 
 /**
  * @brief Reads a single character from the standard input with optional echo.
@@ -50,7 +56,7 @@ static const char* __prefix = "\033[";
  *
  * @since          0.1.0
  */
-static const int __getch(unsigned int __echo) {
+static const int __getch(uint8_t __echo) {
     struct termios __oldt, __newt;
     int __c;
 
@@ -58,14 +64,14 @@ static const int __getch(unsigned int __echo) {
     __newt = __oldt;
     __newt.c_lflag &= ~ICANON;
 
-    if (__echo != 0) {
+    if (__echo != 0) {  /* No echoing */
         __newt.c_lflag &= ECHO;
-    } else {
+    } else {            /* Echoing */
         __newt.c_lflag &= ~ECHO;
     }
 
     tcsetattr(STDIN_FILENO, TCSANOW, &__newt);
-    __c = getchar();
+    __c = getchar();  /* Retrieve the character */
     tcsetattr(STDIN_FILENO, TCSANOW, &__oldt);
 
     return __c;
@@ -74,7 +80,7 @@ static const int __getch(unsigned int __echo) {
 /**
  * @brief Retrieves the current cursor position on the terminal screen.
  * This function retrieves the current cursor position on the terminal screen.
- * It takes two integer references, __x and __y, as output parameters to store
+ * It takes two integer references, \c __x and \c __y, as output parameters to store
  * the X and Y coordinates of the cursor, respectively.
  *
  * @param[out] __x  A reference to an integer to store the X-coordinate of the cursor.
@@ -82,8 +88,9 @@ static const int __getch(unsigned int __echo) {
  *
  * @since           0.1.0
  */
-static void __whereis_xy(int *__x, int *__y) {
-    int in, x = 0, y = 0;
+static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
+    int in;
+    cpos_t x = 0, y = 0;
     printf("%s6n", __prefix);
 
     /* If the character does not same as '\x1b' nor '\x5b',
@@ -120,8 +127,8 @@ static void __whereis_xy(int *__x, int *__y) {
  *
  * @since      0.1.0
  */
-void gotoxy(const int __x, const int __y) {
-    printf("%s%d;%df", __prefix, __y, __x);
+void gotoxy(const cpos_t __x, const cpos_t __y) {
+    printf("%s%u;%uf", __prefix, __y, __x);  /* "\033[{x};{y}f" */
 }
 
 /**
@@ -134,16 +141,20 @@ void gotoxy(const int __x, const int __y) {
  * <ul>
  *   <li> \c "\033[0m": Resets any text formatting or color attributes.
  *   <li> \c "\033[1J": Clears the screen from the cursor position to the end of the screen.
- *   <li> \c "\033[1;1f": Moves the cursor to the top-left corner of the screen.
+ *   <li> \c "\033[H": Moves the cursor to the top-left corner of the screen.
  * </ul>
  *
  * <p>By combining these control sequences in a single \c printf statement,
  * the function achieves the effect of clearing the terminal screen.
  *
+ * @note  This function does not prevent the screen from scrolling. If you
+ *        want to reset entire the screen, use the \c rstscr() instead.
+ *
  * @since 0.1.0
+ * @see   #rstscr(void)
  */
-void clrscr() {
-    printf("%s0m%s1J%s1;1f", __prefix, __prefix, __prefix);
+void clrscr(void) {
+    printf("%s0m%s1J%sH", __prefix, __prefix, __prefix);
 }
 
 /**
@@ -183,8 +194,8 @@ void rstscr(void) {
  * @return      Returns the pushed-back character on success, or `EOF` on failure.
  *
  * @since       0.1.0
- * @see         #getch()
- * @see         #getche()
+ * @see         #getch(void)
+ * @see         #getche(void)
  */
 const int ungetch(const int __c) {
     return ungetc(__c, stdin);
@@ -197,10 +208,10 @@ const int ungetch(const int __c) {
  * @return Returns the character read from the standard input.
  *
  * @since  0.1.0
- * @see    #getche()
+ * @see    #getche(void)
  * @see    #ungetch(int)
  */
-const int getch() {
+const int getch(void) {
     return __getch(0);  /* 0 means no echo */
 }
 
@@ -211,10 +222,10 @@ const int getch() {
  * @return Returns the character read from the standard input.
  *
  * @since  0.1.0
- * @see    #getch()
+ * @see    #getch(void)
  * @see    #ungetch(int)
  */
-const int getche() {
+const int getche(void) {
     return __getch(1);  /* non-zero means with echo */
 }
 
@@ -226,8 +237,8 @@ const int getche() {
  *
  * @since  0.1.0
  */
-const int wherex() {
-    int __x = 0, __y = 0;
+const cpos_t wherex(void) {
+    cpos_t __x = 0, __y = 0;
     __whereis_xy(&__x, &__y);
 
     return __x;  /* only return the X-coordinate */
@@ -241,8 +252,8 @@ const int wherex() {
  *
  * @since  0.1.0
  */
-const int wherey() {
-    int __x = 0, __y = 0;
+const cpos_t wherey() {
+    cpos_t __x = 0, __y = 0;
     __whereis_xy(&__x, &__y);
 
     return __y;  /* only return the Y-coordinate */
