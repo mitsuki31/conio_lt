@@ -1,25 +1,38 @@
+/*======================================================================
+ * conio_lt, a lite version of <conio.h> library for Unix-like systems.
+ * Copyright (C) 2023-2024 Ryuu Mitsuki
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *======================================================================*/
+
 /**
  * @file conio_lt.h
  *
- * Similar like 'conio.h', but it's a lite version of 'conio.h'.
- * I hope this can be useful for your project or something else.
+ * Similar like `<conio.h>`, but it is a lite version of `<conio.h>` library.
+ * Hope this can be useful for your project.
  *
- * List Functions
+ * Available APIs
  * --------------
- * <ul>
- *   <li> #clrscr()
- *   <li> #rstscr()
- *   <li> #getch()
- *   <li> #getche()
- *   <li> #gotoxy(int, int)
- *   <li> #putch(int)
- *   <li> #ungetch(int)
- *   <li> #wherex()
- *   <li> #wherey()
- * </ul>
- *
- * Created and developed by Ryuu Mitsuki
- * Copyright (c) 2023-2024 Ryuu Mitsuki
+ *  - clrscr()
+ *  - rstscr()
+ *  - getch()
+ *  - getche()
+ *  - gotoxy(cpos_t, cpos_t)
+ *  - putch(int)
+ *  - ungetch(int)
+ *  - wherex()
+ *  - wherey()
  *
  * @author   Ryuu Mitsuki
  * @version  0.2.0, 14 January 2024
