@@ -265,11 +265,29 @@ const cpos_t wherex(void) {
  *
  * @since  0.1.0
  */
-const cpos_t wherey() {
+const cpos_t wherey(void) {
     cpos_t __x = 0, __y = 0;
     __whereis_xy(&__x, &__y);
 
     return __y;  /* only return the Y-coordinate */
+}
+
+/**
+ * @brief Retrieves the current X and Y coordinates of the cursor on the terminal screen.
+ *
+ * This function stores the current X-coordinate in the variable pointed
+ * to by `__x`, and the Y-coordinate in the variable pointed to by `__y`.
+ *
+ * To use this function, provide the addresses of variables for X and Y
+ * to store the coordinates.
+ *
+ * @param[in,out] __x  Pointer to the variable where the X-coordinate will be stored.
+ * @param[in,out] __y  Pointer to the variable where the Y-coordinate will be stored.
+ *
+ * @since 0.2.0.
+ */
+void wherexy(cpos_t* __x, cpos_t* __y) {
+    __whereis_xy(__x, __y);
 }
 
 /**
