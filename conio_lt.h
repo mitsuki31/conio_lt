@@ -1,5 +1,5 @@
 /*======================================================================
- * conio_lt, a lite version of <conio.h> library for Unix-like systems.
+ * conio_lt, a lightweight version of <conio.h> library for Unix-like systems.
  * Copyright (C) 2023-2024 Ryuu Mitsuki
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 /**
  * @file conio_lt.h
  *
- * Similar like `<conio.h>`, but it is a lite version of `<conio.h>` library.
+ * Similar to `<conio.h>`, but it is a lite version of `<conio.h>` library.
  * Hope this can be useful for your project.
  *
  * Available APIs
@@ -33,6 +33,7 @@
  *  - ungetch(int)
  *  - wherex()
  *  - wherey()
+ *  - wherexy(cpos_t*, cpos_t*)
  *
  * @author   Ryuu Mitsuki
  * @version  0.2.0, 14 January 2024
@@ -57,9 +58,12 @@ static const char* __prefix = "\033[";  /**< Prefix for control sequences. Inter
 
 /**
  * @brief Reads a single character from the standard input with optional echo.
+ *
  * This function reads a single character from the standard input, allowing
  * for optional echo of the input character.
- * It uses the \c <termios.h> header and the \c tcgetattr and \c tcsetattr functions to modify the terminal settings.
+ *
+ * It uses the \c <termios.h> header and the \c tcgetattr and \c tcsetattr
+ * functions to modify the terminal settings.
  *
  * @param  __echo  A flag indicating whether to echo the input character
  *                 (non-zero value for echo, 0 for no echo).
@@ -92,12 +96,13 @@ static const int __getch(uint8_t __echo) {
 
 /**
  * @brief Retrieves the current cursor position on the terminal screen.
+ *
  * This function retrieves the current cursor position on the terminal screen.
  * It takes two integer references, \c __x and \c __y, as output parameters to store
  * the X and Y coordinates of the cursor, respectively.
  *
- * @param[out] __x  A reference to an integer to store the X-coordinate of the cursor.
- * @param[out] __y  A reference to an integer to store the Y-coordinate of the cursor.
+ * @param[in,out] __x  A reference to an integer to store the X-coordinate of the cursor.
+ * @param[in,out] __y  A reference to an integer to store the Y-coordinate of the cursor.
  *
  * @since           0.1.0
  */
@@ -249,6 +254,8 @@ const int getche(void) {
  * @return Returns the X-coordinate of the cursor.
  *
  * @since  0.1.0
+ * @see    #wherey(void)
+ * @see    #wherexy(cpos_t*, cpos_t*)
  */
 const cpos_t wherex(void) {
     cpos_t __x = 0, __y = 0;
@@ -264,6 +271,8 @@ const cpos_t wherex(void) {
  * @return Returns the Y-coordinate of the cursor.
  *
  * @since  0.1.0
+ * @see    #wherex(void)
+ * @see    #wherexy(cpos_t*, cpos_t*)
  */
 const cpos_t wherey(void) {
     cpos_t __x = 0, __y = 0;
