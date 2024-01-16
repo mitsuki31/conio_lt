@@ -28,6 +28,8 @@
  *  - rstscr()
  *  - getch()
  *  - getche()
+ *  - gotox(cpos_t)
+ *  - gotoy(cpos_t)
  *  - gotoxy(cpos_t, cpos_t)
  *  - putch(int)
  *  - ungetch(int)
@@ -313,6 +315,42 @@ void wherexy(cpos_t* __x, cpos_t* __y) {
 const int putch(const int __chr) {
     printf("%c", __chr);
     return __chr;
+}
+
+/**
+ * @brief Sets the cursor position to the specified X-coordinate,
+ *        maintaining the current Y-coordinate.
+ *
+ * This function serves as an alias for `gotoxy(x, wherey())`. It allows
+ * for flexible cursor manipulation by allowing the user to set the
+ * X-coordinate while keeping the current Y-coordinate unchanged.
+ *
+ * @param __x  The desired X-coordinate to set the cursor to.
+ *
+ * @since 0.2.0
+ * @see   #gotoy(cpos_t)
+ * @see   #gotoxy(cpos_t, cpos_t)
+ */
+void gotox(const cpos_t __x) {
+    gotoxy(__x, wherey());
+}
+
+/**
+ * @brief Sets the cursor position to the specified Y-coordinate,
+ *        maintaining the current X-coordinate.
+ *
+ * This function serves as an alias for `gotoxy(wherex(), y)`. It provides
+ * flexibility in cursor positioning by allowing the user to set the
+ * Y-coordinate while keeping the current X-coordinate unchanged.
+ *
+ * @param __y  The desired Y-coordinate to set the cursor to.
+ *
+ * @since 0.2.0
+ * @see   #gotox(cpos_t)
+ * @see   #gotoxy(cpos_t, cpos_t)
+ */
+void gotoy(const cpos_t __y) {
+    gotoxy(wherex(), __y);
 }
 
 #endif /* CONIO_LT_H_ */
