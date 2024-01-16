@@ -51,9 +51,8 @@
 #include <fcntl.h>
 #include <termios.h>
 
-#define  cpos_t  unsigned int  /**< An abbreviation from Cursor Position Type.
-                                    Custom defined type to represent the
-                                    cursor position type.
+typedef unsigned int  cpos_t;  /**< An abbreviation from Cursor Position Type.
+                                    Custom type definition to represent the cursor position.
                                 */
 
 static const char* __prefix = "\033[";  /**< Prefix for control sequences. Internal use only. */
