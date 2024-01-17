@@ -17,6 +17,8 @@
 
 The `conio_lt` library is a lightweight adaptation of the `conio.h` library designed for Unix-like systems. Originally a library for old DOS systems, `conio.h` provided essential functions for console input and output. This lite version aims to bring these functionalities to Unix-like systems and Borland C++, especially for legacy version of Borland C++.
 
+[Visit this site](https://mitsuki31.github.io/conio_lt) for more detailed information about this project, including the APIs documentation.
+
 > [!IMPORTANT]  
 > On Windows, this library can be used with [Git Bash](https://git-scm.com) as the shell environment, combined with [MinGW](https://sourceforge.net/projects/mingw) for the `gcc` compiler.
 > Ensure that [MinGW](https://sourceforge.net/projects/mingw) is correctly installed on Windows, and the `gcc` compiler runs smoothly.
