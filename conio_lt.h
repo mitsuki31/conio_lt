@@ -1,31 +1,44 @@
+/*======================================================================
+ * conio_lt, a lightweight version of <conio.h> library for Unix-like systems.
+ * Copyright (C) 2023-2024 Ryuu Mitsuki
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *======================================================================*/
+
 /**
  * @file conio_lt.h
  *
- * Copyright (c) 2023 Ryuu Mitsuki
- * Authored and developed by Ryuu Mitsuki
+ * Similar to `<conio.h>`, but it is a lite version of `<conio.h>` library.
+ * Hope this can be useful for your project.
  *
- * @version  0.1.5, 2 July 2023
- *
- * Description
- * -------------
- * Similar like 'conio.h', but it's a lite version of 'conio.h'.
- * I hope this can be useful for your project or something else.
- * ------------
- *
- * List Functions
+ * Available APIs
  * --------------
- * <ul>
- *   <li> #clrscr()
- *   <li> #getch()
- *   <li> #getche()
- *   <li> #gotoxy(int, int)
- *   <li> #putch(int)
- *   <li> #ungetch(int)
- *   <li> #wherex()
- *   <li> #wherey()
- * </ul>
- * --------------
+ *  - clrscr()
+ *  - rstscr()
+ *  - getch()
+ *  - getche()
+ *  - gotox(cpos_t)
+ *  - gotoy(cpos_t)
+ *  - gotoxy(cpos_t, cpos_t)
+ *  - putch(int)
+ *  - ungetch(int)
+ *  - wherex()
+ *  - wherey()
+ *  - wherexy(cpos_t*, cpos_t*)
  *
+ * @author   Ryuu Mitsuki
+ * @version  0.2.0, 14 January 2024
  */
 
 #ifndef CONIO_LT_H_
@@ -33,17 +46,25 @@
 
 
 #include <stdio.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <termios.h>
 
-static const char* __prefix = "\033[";
+typedef unsigned int  cpos_t;  /**< An abbreviation from Cursor Position Type.
+                                    Custom type definition to represent the cursor position.
+                                */
+
+static const char* __prefix = "\033[";  /**< Prefix for control sequences. Internal use only. */
 
 /**
  * @brief Reads a single character from the standard input with optional echo.
+ *
  * This function reads a single character from the standard input, allowing
  * for optional echo of the input character.
- * It uses the \c <termios.h> header and the \c tcgetattr and \c tcsetattr functions to modify the terminal settings.
+ *
+ * It uses the \c <termios.h> header and the \c tcgetattr and \c tcsetattr
+ * functions to modify the terminal settings.
  *
  * @param  __echo  A flag indicating whether to echo the input character
  *                 (non-zero value for echo, 0 for no echo).
@@ -53,7 +74,7 @@ static const char* __prefix = "\033[";
  *
  * @since          0.1.0
  */
-static const int __getch(unsigned int __echo) {
+static const int __getch(uint8_t __echo) {
     struct termios __oldt, __newt;
     int __c;
 
@@ -61,14 +82,14 @@ static const int __getch(unsigned int __echo) {
     __newt = __oldt;
     __newt.c_lflag &= ~ICANON;
 
-    if (__echo != 0) {
+    if (__echo != 0) {  /* No echoing */
         __newt.c_lflag &= ECHO;
-    } else {
+    } else {            /* Echoing */
         __newt.c_lflag &= ~ECHO;
     }
 
     tcsetattr(STDIN_FILENO, TCSANOW, &__newt);
-    __c = getchar();
+    __c = getchar();  /* Retrieve the character */
     tcsetattr(STDIN_FILENO, TCSANOW, &__oldt);
 
     return __c;
@@ -76,17 +97,19 @@ static const int __getch(unsigned int __echo) {
 
 /**
  * @brief Retrieves the current cursor position on the terminal screen.
+ *
  * This function retrieves the current cursor position on the terminal screen.
- * It takes two integer references, __x and __y, as output parameters to store
+ * It takes two integer references, \c __x and \c __y, as output parameters to store
  * the X and Y coordinates of the cursor, respectively.
  *
- * @param[out] __x  A reference to an integer to store the X-coordinate of the cursor.
- * @param[out] __y  A reference to an integer to store the Y-coordinate of the cursor.
+ * @param[in,out] __x  A reference to an integer to store the X-coordinate of the cursor.
+ * @param[in,out] __y  A reference to an integer to store the Y-coordinate of the cursor.
  *
  * @since           0.1.0
  */
-static void __whereis_xy(int *__x, int *__y) {
-    int in, x = 0, y = 0;
+static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
+    int in;
+    cpos_t x = 0, y = 0;
     printf("%s6n", __prefix);
 
     /* If the character does not same as '\x1b' nor '\x5b',
@@ -123,8 +146,8 @@ static void __whereis_xy(int *__x, int *__y) {
  *
  * @since      0.1.0
  */
-void gotoxy(const int __x, const int __y) {
-    printf("%s%d;%df", __prefix, __y, __x);
+void gotoxy(const cpos_t __x, const cpos_t __y) {
+    printf("%s%u;%uf", __prefix, __y, __x);  /* "\033[{x};{y}f" */
 }
 
 /**
@@ -137,16 +160,47 @@ void gotoxy(const int __x, const int __y) {
  * <ul>
  *   <li> \c "\033[0m": Resets any text formatting or color attributes.
  *   <li> \c "\033[1J": Clears the screen from the cursor position to the end of the screen.
- *   <li> \c "\033[1;1f": Moves the cursor to the top-left corner of the screen.
+ *   <li> \c "\033[H": Moves the cursor to the top-left corner of the screen.
  * </ul>
  *
  * <p>By combining these control sequences in a single \c printf statement,
  * the function achieves the effect of clearing the terminal screen.
  *
+ * @note  This function does not prevent the screen from scrolling. If you
+ *        want to reset entire the screen, use the \c rstscr() instead.
+ *
  * @since 0.1.0
+ * @see   #rstscr(void)
  */
-void clrscr() {
-    printf("%s0m%s1J%s1;1f", __prefix, __prefix, __prefix);
+void clrscr(void) {
+    printf("%s0m%s1J%sH", __prefix, __prefix, __prefix);
+}
+
+/**
+ * @brief Resets and clears the terminal screen.
+ *
+ * This function resets any text formatting or color attributes,
+ * clears the entire terminal screen, and moves the cursor to the
+ * top-left corner. It achieves this effect by sending the appropriate
+ * control sequences to the standard output using \c printf.
+ *
+ * The function uses the following control sequences:
+ *   - \c "\033[0m": Resets any text formatting or color attributes.
+ *   - \c "\033c": Resets and clears the entire terminal screen.
+ *
+ * By combining these control sequences in a single \c printf statement,
+ * the function achieves the effect of resetting and clearing the terminal
+ * screen.
+ *
+ * @note  This function prevents the screen from scrolling by clearing
+ *        the entire screen. If you only want to clear the screen without
+ *        preventing scrolling, consider using the \c clrscr() function.
+ *
+ * @since 0.2.0
+ * @see   #clrscr(void)
+ */
+void rstscr(void) {
+    printf("%s0m\033c", __prefix);  /* "\033[0m\033c" */
 }
 
 /**
@@ -159,8 +213,8 @@ void clrscr() {
  * @return      Returns the pushed-back character on success, or `EOF` on failure.
  *
  * @since       0.1.0
- * @see         #getch()
- * @see         #getche()
+ * @see         #getch(void)
+ * @see         #getche(void)
  */
 const int ungetch(const int __c) {
     return ungetc(__c, stdin);
@@ -173,10 +227,10 @@ const int ungetch(const int __c) {
  * @return Returns the character read from the standard input.
  *
  * @since  0.1.0
- * @see    #getche()
+ * @see    #getche(void)
  * @see    #ungetch(int)
  */
-const int getch() {
+const int getch(void) {
     return __getch(0);  /* 0 means no echo */
 }
 
@@ -187,10 +241,10 @@ const int getch() {
  * @return Returns the character read from the standard input.
  *
  * @since  0.1.0
- * @see    #getch()
+ * @see    #getch(void)
  * @see    #ungetch(int)
  */
-const int getche() {
+const int getche(void) {
     return __getch(1);  /* non-zero means with echo */
 }
 
@@ -201,9 +255,11 @@ const int getche() {
  * @return Returns the X-coordinate of the cursor.
  *
  * @since  0.1.0
+ * @see    #wherey(void)
+ * @see    #wherexy(cpos_t*, cpos_t*)
  */
-const int wherex() {
-    int __x = 0, __y = 0;
+const cpos_t wherex(void) {
+    cpos_t __x = 0, __y = 0;
     __whereis_xy(&__x, &__y);
 
     return __x;  /* only return the X-coordinate */
@@ -216,12 +272,32 @@ const int wherex() {
  * @return Returns the Y-coordinate of the cursor.
  *
  * @since  0.1.0
+ * @see    #wherex(void)
+ * @see    #wherexy(cpos_t*, cpos_t*)
  */
-const int wherey() {
-    int __x = 0, __y = 0;
+const cpos_t wherey(void) {
+    cpos_t __x = 0, __y = 0;
     __whereis_xy(&__x, &__y);
 
     return __y;  /* only return the Y-coordinate */
+}
+
+/**
+ * @brief Retrieves the current X and Y coordinates of the cursor on the terminal screen.
+ *
+ * This function stores the current X-coordinate in the variable pointed
+ * to by `__x`, and the Y-coordinate in the variable pointed to by `__y`.
+ *
+ * To use this function, provide the addresses of variables for X and Y
+ * to store the coordinates.
+ *
+ * @param[in,out] __x  Pointer to the variable where the X-coordinate will be stored.
+ * @param[in,out] __y  Pointer to the variable where the Y-coordinate will be stored.
+ *
+ * @since 0.2.0.
+ */
+void wherexy(cpos_t* __x, cpos_t* __y) {
+    __whereis_xy(__x, __y);
 }
 
 /**
@@ -238,6 +314,42 @@ const int wherey() {
 const int putch(const int __chr) {
     printf("%c", __chr);
     return __chr;
+}
+
+/**
+ * @brief Sets the cursor position to the specified X-coordinate,
+ *        maintaining the current Y-coordinate.
+ *
+ * This function serves as an alias for `gotoxy(x, wherey())`. It allows
+ * for flexible cursor manipulation by allowing the user to set the
+ * X-coordinate while keeping the current Y-coordinate unchanged.
+ *
+ * @param __x  The desired X-coordinate to set the cursor to.
+ *
+ * @since 0.2.0
+ * @see   #gotoy(cpos_t)
+ * @see   #gotoxy(cpos_t, cpos_t)
+ */
+void gotox(const cpos_t __x) {
+    gotoxy(__x, wherey());
+}
+
+/**
+ * @brief Sets the cursor position to the specified Y-coordinate,
+ *        maintaining the current X-coordinate.
+ *
+ * This function serves as an alias for `gotoxy(wherex(), y)`. It provides
+ * flexibility in cursor positioning by allowing the user to set the
+ * Y-coordinate while keeping the current X-coordinate unchanged.
+ *
+ * @param __y  The desired Y-coordinate to set the cursor to.
+ *
+ * @since 0.2.0
+ * @see   #gotox(cpos_t)
+ * @see   #gotoxy(cpos_t, cpos_t)
+ */
+void gotoy(const cpos_t __y) {
+    gotoxy(wherex(), __y);
 }
 
 #endif /* CONIO_LT_H_ */
