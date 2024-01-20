@@ -169,7 +169,9 @@ typedef int64_t                 ssize_t;
 typedef unsigned int  cpos_t;              /**< An abbreviation from **Cursor Position Type**, represents the cursor position. */
 static const char *   __prefix = "\033[";  /**< Prefix of ANSI escape sequences. Internal use only. */
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif   /* __cplusplus */
 
 /**
  * @brief Reads a single character from the standard input with optional echo.
@@ -188,25 +190,47 @@ static const char *   __prefix = "\033[";  /**< Prefix of ANSI escape sequences.
  * @since          0.1.0
  */
 static const int __getch(uint8_t __echo) {
-    struct termios __oldt, __newt;
     int __c;
 
-    tcgetattr(STDIN_FILENO, &__oldt);
-    __newt = __oldt;
-    __newt.c_lflag &= ~ICANON;
+#if defined(__UNIX_PLATFORM) || defined(__UNIX_PLATFORM_ANDRO)
+    /* Internal '__getch' function implementation for Unix systems only */
+    struct termios __oldterm, __newterm;
 
-    if (__echo != 0) {  /* No echoing */
-        __newt.c_lflag &= ECHO;
-    } else {            /* Echoing */
-        __newt.c_lflag &= ~ECHO;
+    tcgetattr(STDIN_FILENO, &__oldterm);
+    __newterm = __oldterm;  /* Copy the original terminal setting */
+    __newterm.c_lflag &= ~ICANON;
+
+    if (__echo != 0) {
+        __newterm.c_lflag &= ECHO;   /* With echo */
+    } else {
+        __newterm.c_lflag &= ~ECHO;  /* Without echo */
     }
 
-    tcsetattr(STDIN_FILENO, TCSANOW, &__newt);
-    __c = getchar();  /* Retrieve the character */
-    tcsetattr(STDIN_FILENO, TCSANOW, &__oldt);
+    tcsetattr(STDIN_FILENO, TCSANOW, &__newterm);  /* Apply the customized terminal setting */
+    __c = getchar();                               /* Retrieve the character */
+    tcsetattr(STDIN_FILENO, TCSANOW, &__oldterm);  /* Restore original terminal setting */
+#else  /* '__getch' function implementation for Windows */
+    HANDLE handler = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD console_mode, original_mode;
 
-    return __c;
+    GetConsoleMode(handler, &console_mode);
+    original_mode = console_mode;  /* Copy the original console setting */
+
+    if (__echo != 0) {
+        console_mode &= ~ENABLE_LINE_INPUT;  /* With echo */
+    } else {
+        console_mode &= ~ENABLE_ECHO_INPUT;  /* Without echo */
+    }
+    /* Apply the customized console setting */
+    SetConsoleMode(handler, console_mode);
+    __c = getchar();  /* Retrieve the input character */
+
+    /* Restore original console mode */
+    SetConsoleMode(handler, original_mode);
+#endif  /* (__unix__ || __unix) || __ANDROID__ */
+    return __c;  /* Return the retrieved character */
 }
+
 
 /**
  * @brief Retrieves the current cursor position on the terminal screen.
@@ -221,27 +245,36 @@ static const int __getch(uint8_t __echo) {
  * @since           0.1.0
  */
 static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
-    int in;
-    cpos_t x = 0, y = 0;
+    cpos_t x = 0, y = 0;  /* Variables to hold the coordinates */
+
+#if defined(__WIN_PLATFORM_32) || defined(__MINGWC_32)
+    HANDLE handler = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+
+    if (GetConsoleScreenBufferInfo(handler, &csbi)) {
+        x = csbi.dwCursorPosition.X + 1;
+        y = csbi.dwCursorPosition.Y + 1;
+    }
+#else  /* Body function for Unix systems */
     printf("%s6n", __prefix);
 
-    /* If the character does not same as '\x1b' nor '\x5b',
-     * immediately return and leaving the __x and __y references unchanged
+    /* If the input character neither equal with '0x1B' (escape character)
+     * nor '0x5B' ('['), then return (leaving the '__x' and '__y' references
+     * unmodified) because it was unable to get current position of cursor.
      */
-    if (__getch(0) != '\x1B') {
-        return;
-    } else if (__getch(0) != '\x5B') {
+    if (__getch(0) != 0x1B ^ __getch(0) != 0x5B) {
         return;
     }
 
-    while ((in = __getch(0)) != ';') {
-        y = y * 10 + in - '0';
+    int temp;
+    while ((temp = __getch(0)) != 0x3B /* ';' */) {
+        y = y * 10 + (temp - '0');
     }
 
-    while ((in = __getch(0)) != 'R') {
-        x = x * 10 + in - '0';
+    while ((temp = __getch(0)) != 0x52 /* 'R' */) {
+        x = x * 10 + (temp - '0');
     }
-
+#endif  /* __WIN_PLATFORM_32 || __MINGWC_32 */
     /* Store and assign the cursor position */
     *__x = x;
     *__y = y;
@@ -477,5 +510,16 @@ void gotox(const cpos_t __x) {
 void gotoy(const cpos_t __y) {
     gotoxy(wherex(), __y);
 }
+
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif  /* __cplusplus */
+
+#undef __UNIX_PLATFORM
+#undef __UNIX_PLATFORM_ANDRO
+#undef __WIN_PLATFORM_32
+#undef __WIN_PLATFORM_64
+#undef __MINGWC_32
+#undef __MINGWC_64
 
 #endif /* CONIO_LT_H_ */
