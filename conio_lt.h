@@ -40,7 +40,7 @@
  *
  * @author    Ryuu Mitsuki
  * @version   0.2.0
- * @date      17 Jan 2024
+ * @date      20 Jan 2024
  * @copyright &copy; 2023 - 2024 Ryuu Mitsuki.
  *            Licensed under the GNU General Public License 3.0.
  */
@@ -48,18 +48,128 @@
 #ifndef CONIO_LT_H_
 #define CONIO_LT_H_
 
-
+/* Standard IO header */
 #include <stdio.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <termios.h>
 
-typedef unsigned int  cpos_t;  /**< An abbreviation from **Cursor Position Type**.
-                                    Custom type definition to represent the cursor position.
-                                */
+#if defined(unix) || defined(__unix__) || defined(__unix)
+#  define __UNIX_PLATFORM
+#  ifdef __ANDROID__  /* For Android */
+#    define __UNIX_PLATFORM_ANDRO
+#  endif  /* __ANDROID__ */
+#endif  /* unix || __unix__ || __unix */
 
-static const char* __prefix = "\033[";  /**< Prefix for control sequences. Internal use only. */
+/* _WIN32 is a macro defined in Windows environments (defined both on x86 (32 bit)
+ * and x64 (64 bit) architecture, and __WIN32__ macro were also equivalent but
+ * it's defined by Borland C++.
+ */
+#if defined(_WIN32) || defined(__WIN32__)
+#  define __WIN_PLATFORM_32
+#  ifdef _WIN64  /* 64 bit or x64 architecture */
+#    define __WIN_PLATFORM_64
+#  endif  /* _WIN64 */
+/* The __MINGW32__ macro is defined by MinGW compiler and defined both
+ * on 32 bit either 64 bit.
+ */
+#  ifdef __MINGW32__  /* MinGW compiler */
+#    define __MINGWC_32
+#    ifdef __MINGW64__  /* MinGW-w64 64 bit */
+#      define __MINGWC_64
+#    endif  /* __MINGW64__ */
+#  endif  /* __MINGW32__ */
+#endif  /* _WIN32 || __WIN32__ */
+
+/* Warn the users if using pre-C99 compilers and specific compilers
+ * that is not appropriate with code in this header file.
+ */
+#if ((defined(__STDC_VERSION__) && __STDC_VERSION__ == 199409L /* C94 */)   \
+        || (defined(__STDC__) && !defined(__STDC_VERSION__))                \
+        || (defined(__BORLANDC__) && __BORLANDC__ < 0x520 /* v5.0 */)       \
+        || (defined(_MSC_VER) && _MSC_VER < 1600 /* Visual C++ 2010 */))    \
+        && !defined(__cplusplus)  /* Warn only if using C compiler */
+#warning \
+  This header file may not fully support pre-C99 compilers.\
+  Consider using a C99-compliant compiler.
+#endif  /* Pre-C99 compiler warn use */
+
+#if defined(__cplusplus) && __cplusplus < 201103L  /* C++11 */
+#warning \
+  This header file may not fully support pre-C++11 compilers.\
+  Consider using a C++11 or later compiler.
+#endif  /* Pre-C++11 compiler warn use */
+
+
+/* __STDC__ is a macro defined by C compilers that the compiler is conforming
+ * to the ANSI/ISO C standard. However, this macro are also defined in Borland C++
+ * environment but not in Microsoft Visual C++. Microsoft Visual C++ compiler uses
+ * the _MSC_VER macro to indicate the version of the compiler.
+ */
+#ifdef __STDC__
+#  if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L /* C99 */)   \
+        || (defined(__BORLANDC__) && __BORLANDC__ >= 0x520 /* v5.0 */)
+#    define __HAVE_STDINT_LIB
+#  endif  /* __STDC_VERSION__ >= 199901L || __BORLANDC__ >= 0x520 */
+#else
+/* Check for Microsoft Visual C++ compiler and use its fixed-width types.
+ * _MSC_VER is a macro defined by Microsoft Visual C++ compilers.
+ */
+#  if defined(_MSC_VER) && _MSC_VER >= 1600  /* Visual C++ 2010 */
+#    define __HAVE_STDINT_LIB
+#  endif  /* _MSC_VER && _MSC_VER >= 1600 */
+#endif  /* __STDC_VERSION__ */
+
+/* Import the 'stdint.h' header if the compiler have it, otherwise define manually */
+#ifdef __HAVE_STDINT_LIB
+#  include <stdint.h>  /* Standard header for fixed-width integer types */
+#  undef __HAVE_STDINT_LIB
+#endif
+
+/* Handle platform-specific headers for console I/O using specific preprocessor macros */
+#if defined(__WIN_PLATFORM_32) || defined(__MINGWC_32)
+#  include <windows.h>  /* Windows-specific header for terminal I/O control */
+
+/*:: Minor replacement for `unistd.h` header file ::*/
+/*:: -------------------------------------------- ::*/
+/* File number of file descriptors (stdin, stdout, stderr) */
+#define STDIN_FILENO    0
+#define STDOUT_FILENO   1
+#define STDERR_FILENO   2
+
+/* File permissions */
+#define R_OK  4  /* Read */
+#define W_OK  2  /* Write */
+/* #define X_OK  1 */  /* Execute - Unsupported in Windows file system */
+#define F_OK  0  /* Exists (as regular file) */
+
+/* Fixed-width integer types definition */
+typedef signed char             int8_t;    /* 8-bit */
+typedef unsigned char           uint8_t;   /* U 8-bit */
+typedef signed short            int16_t;   /* 16-bit */
+typedef unsigned short          uint16_t;  /* U 16-bit */
+typedef signed int              int32_t;   /* 32-bit */
+typedef unsigned int            uint32_t;  /* U 32-bit */
+/* Use `long long` for 64-bit */
+#  if defined(__WIN_PLATFORM_64) || defined(__MINGWC_64)
+typedef signed long long        int64_t;   /* 64-bit */
+typedef unsigned long long      uint64_t;  /* U 64-bit */
+#  else
+typedef signed long             int64_t;   /* 64-bit */
+typedef unsigned long           uint64_t;  /* U 64-bit */
+#  endif  /* __WIN_PLATFORM_64 || __MINGWC_64 */
+typedef int64_t                 ssize_t;
+/*:: -------------------------------------------- ::*/
+#else
+/* On Windows environment, these headers were not provided by MinGW neither by Borland C++ compiler.
+ * Because this library are only designed for Unix-like environment and non-standard C libraries.
+ */
+#  include <unistd.h>
+#  include <termios.h>  /* POSIX header for terminal I/O control */
+#endif  /* _WIN32 || __WIN32__ || __MINGW32__ */
+
+
+typedef unsigned int  cpos_t;              /**< An abbreviation from **Cursor Position Type**, represents the cursor position. */
+static const char *   __prefix = "\033[";  /**< Prefix of ANSI escape sequences. Internal use only. */
+
+
 
 /**
  * @brief Reads a single character from the standard input with optional echo.
