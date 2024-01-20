@@ -19,9 +19,18 @@
 /**
  * @file conio_lt.h
  *
- * `conio_lt` library is a lightweight adaptation of the `<conio.h>` library
- * designed for Unix-like systems. This project aims to bring these functionalities
- * to Unix-like systems and Borland C++, especially for legacy version of Borland C++.
+ * @brief `conio_lt` is a lightweight adaptation of the `<conio.h>` library,
+ *        designed specifically for Unix-like systems and Termux on Android.
+ *
+ * This library aims to bring console manipulation functionalities to Unix-like
+ * environments, providing a subset of features found in `<conio.h>`. It is tailored
+ * for Unix-like systems, and its usage on Windows is not guaranteed to behave as
+ * expected. Users are advised to exercise caution when using this library on
+ * non-Unix environments.
+ *
+ * @note If you intend to run Unix-like commands on a Windows system, consider using
+ *       [MSYS2](https://msys2.org) to provide a Bash shell environment. Keep in mind
+ *       this approach may not fully replicate Unix-like behaviors on Windows.
  *
  * Available APIs
  * --------------
@@ -174,20 +183,27 @@ extern "C" {
 #endif   /* __cplusplus */
 
 /**
- * @brief Reads a single character from the standard input with optional echo.
+ * @brief Retrieves a single character from the standard input without echoing.
  *
- * This function reads a single character from the standard input, allowing
- * for optional echo of the input character.
+ * This function retrieves a character from the standard input without echoing it
+ * to the console. It is designed for use in console-based applications
+ * where user input needs to be read without displaying the entered characters.
  *
- * It uses the `<termios.h>` header and the `tcgetattr` and `tcsetattr`
- * functions to modify the terminal settings.
+ * This is designed for internal use only and it is used by these two API functions:
+ *   - `getch()` - is an alias for `__getch(0)` (without echo)
+ *   - `getche()` - is an alias for `__getch(1)` (with echo)
  *
- * @param  __echo  A flag indicating whether to echo the input character
- *                 (non-zero value for echo, zero for *no* echo).
+ * @param  __echo  Flag indicating whether to echo the input (0 for no echo, any positive value for echo).
+ * @return         The retrieved character from the standard input.
  *
- * @return         Returns the character read from the standard input.
+ * @note This function is platform-dependent. On Unix systems, it uses `termios.h` header
+ *       to customize the terminal settings, while on Windows, it manipulates the
+ *       console mode using Windows API (`windows.h`).
  *
- * @since          0.1.0
+ * @warning This function may not behave as expected on non-terminal input streams.
+ *          It is intended for console-based applications.
+ *
+ * @since 0.1.0
  */
 static const int __getch(uint8_t __echo) {
     int __c;
@@ -233,16 +249,31 @@ static const int __getch(uint8_t __echo) {
 
 
 /**
- * @brief Retrieves the current cursor position on the terminal screen.
+ * @brief Retrieves the current coordinates of the cursor on the terminal screen.
  *
- * This function retrieves the current cursor position on the terminal screen.
- * It takes two integer references, `__x` and `__y`, as output parameters to store
- * the X and Y coordinates of the cursor, respectively.
+ * This function is designed to work on both Unix-like systems and Windows. On Unix-like
+ * systems, it uses ANSI escape sequences to query the cursor position. On Windows, it
+ * utilizes the Windows Console API to obtain the cursor coordinates.
  *
- * @param[out] __x  A reference to an integer to store the X-coordinate of the cursor.
- * @param[out] __y  A reference to an integer to store the Y-coordinate of the cursor.
+ * This function is designed for internal use only and it's being used by these API functions:
+ *   - `wherex()`                  - Retrieves the current X-coordinate of the cursor position
+ *   - `wherey()`                  - Retrieves the current Y-coordinate of the cursor position
+ *   - `wherexy(cpos_t*, cpos_t*)` - Retrieves the current both coordinates of the cursor position
+ *                                   stored in provided pointer variables
  *
- * @since           0.1.0
+ * @param[out] __x  Pointer to a variable where the X-coordinate of the cursor will be stored.
+ * @param[out] __y  Pointer to a variable where the Y-coordinate of the cursor will be stored.
+ *
+ * @note For Unix-like systems, this function sends the ANSI escape sequence `"\033[6n"`
+ *       to the terminal and parses the response to obtain cursor coordinates. On Windows,
+ *       it uses the Windows Console API to get the cursor position.
+ *
+ * @warning This function may not work correctly in all terminal emulators or environments,
+ *          especially if the terminal does not support ANSI escape sequences. Ensure that your
+ *          target environment supports the necessary features.
+ *
+ * @since 0.1.0
+ * @see   wherexy(cpos_t*, cpos_t*)
  */
 static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
     cpos_t x = 0, y = 0;  /* Variables to hold the coordinates */
