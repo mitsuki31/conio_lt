@@ -289,8 +289,8 @@ static int __getch(GETCH_ECHO const __echo) {
  *   - `wherexy(cpos_t*, cpos_t*)` - Retrieves the current both coordinates of the cursor position
  *                                   stored in provided pointer variables
  *
- * @param[out] __x  Pointer to a variable where the X-coordinate of the cursor will be stored.
- * @param[out] __y  Pointer to a variable where the Y-coordinate of the cursor will be stored.
+ * @param[in,out] __x  Pointer to a variable where the X-coordinate of the cursor will be stored.
+ * @param[in,out] __y  Pointer to a variable where the Y-coordinate of the cursor will be stored.
  *
  * @note For Unix-like systems, this function sends the ANSI escape sequence `"\033[6n"`
  *       to the terminal and parses the response to obtain cursor coordinates. On Windows,
@@ -348,15 +348,15 @@ static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
  * @brief Moves the cursor to the specified coordinates on the terminal screen.
  *
  * This function moves the cursor on the terminal screen to the specified coordinates.
- * It takes two integer parameters, `__x` and `__y`, representing the X and Y coordinates respectively.
+ * It takes two integer parameters, `x` and `y`, representing the X and Y coordinates respectively.
  *
- * @param __x  The X-coordinate to move the cursor to.
- * @param __y  The Y-coordinate to move the cursor to.
+ * @param[in] x  The X-coordinate to move the cursor to.
+ * @param[in] y  The Y-coordinate to move the cursor to.
  *
- * @since      0.1.0
+ * @since 0.1.0
  */
-void gotoxy(const cpos_t __x, const cpos_t __y) {
-    printf("%s%u;%uf", __prefix, __y, __x);  /* "\033[{y};{x}f" */
+void gotoxy(cpos_t const x, cpos_t const y) {
+    printf("%s%u;%uf", __prefix, y, x);  /* "\033[{y};{x}f" */
 }
 
 /**
@@ -468,18 +468,17 @@ void rstscr(void) {
  * @brief Pushes a character back onto the input stream.
  *
  * This function pushes a character back onto the input stream.
- * It takes an integer parameter `__c`, representing the character to be pushed back.
+ * It takes an integer parameter `c`, representing the character to be pushed back.
  *
- * @param  __c  The character to be pushed back.
+ * @param[in] c  The character to be pushed back.
+ * @return       Returns the pushed-back character on success, or `EOF` on failure.
  *
- * @return      Returns the pushed-back character on success, or `EOF` on failure.
- *
- * @since       0.1.0
- * @see         getch(void)
- * @see         getche(void)
+ * @since 0.1.0
+ * @see   getch(void)
+ * @see   getche(void)
  */
-const int ungetch(const int __c) {
-    return ungetc(__c, stdin);
+int ungetch(int const c) {
+    return ungetc(c, stdin);
 }
 
 /**
@@ -493,8 +492,8 @@ const int ungetch(const int __c) {
  * @see    getche(void)
  * @see    ungetch(int)
  */
-const int getch(void) {
-    return __getch(0);  /* 0 means no echo */
+int getch(void) {
+    return __getch(GETCH_NO_ECHO);  /* GETCH_NO_ECHO means no echoing input */
 }
 
 /**
@@ -508,8 +507,8 @@ const int getch(void) {
  * @see    getch(void)
  * @see    ungetch(int)
  */
-const int getche(void) {
-    return __getch(1);  /* non-zero means with echo */
+int getche(void) {
+    return __getch(GETCH_USE_ECHO);  /* GETCH_USE_ECHO means with echoing input */
 }
 
 /**
@@ -524,7 +523,7 @@ const int getche(void) {
  * @see    wherey(void)
  * @see    wherexy(cpos_t*, cpos_t*)
  */
-const cpos_t wherex(void) {
+cpos_t wherex(void) {
     cpos_t __x = 0, __y = 0;
     __whereis_xy(&__x, &__y);
 
@@ -543,7 +542,7 @@ const cpos_t wherex(void) {
  * @see    wherex(void)
  * @see    wherexy(cpos_t*, cpos_t*)
  */
-const cpos_t wherey(void) {
+cpos_t wherey(void) {
     cpos_t __x = 0, __y = 0;
     __whereis_xy(&__x, &__y);
 
@@ -554,35 +553,33 @@ const cpos_t wherey(void) {
  * @brief Retrieves the current X and Y coordinates of the cursor on the terminal screen.
  *
  * This function stores the current X-coordinate in the variable pointed
- * to by `__x`, and the Y-coordinate in the variable pointed to by `__y`.
+ * to by `x`, and the Y-coordinate in the variable pointed to by `y`.
  *
  * To use this function, provide the addresses of variables for X and Y
  * to store the coordinates.
  *
- * @param[in,out] __x  Pointer to the variable where the X-coordinate will be stored.
- * @param[in,out] __y  Pointer to the variable where the Y-coordinate will be stored.
+ * @param[in,out] x  Pointer to the variable where the X-coordinate will be stored.
+ * @param[in,out] y  Pointer to the variable where the Y-coordinate will be stored.
  *
  * @since 0.2.0.
  */
-void wherexy(cpos_t* __x, cpos_t* __y) {
-    __whereis_xy(__x, __y);
+void wherexy(cpos_t* x, cpos_t* y) {
+    __whereis_xy(x, y);
 }
 
 /**
  * @brief Writes a character to the standard output.
  *
  * This function writes a character to the standard output.
- * It takes an integer parameter `__chr`, representing the character to be written.
+ * It takes an integer parameter `c`, representing the character to be written.
  *
- * @param  __chr  The character to be written.
+ * @param[in] c  The character to be written.
+ * @return       Returns the written character as an integer.
  *
- * @return        Returns the written character as an integer.
- *
- * @since         0.1.0
+ * @since 0.1.0
  */
-const int putch(const int __chr) {
-    printf("%c", __chr);
-    return __chr;
+int putch(int const __c) {
+    return putchar(__c);
 }
 
 /**
@@ -593,13 +590,13 @@ const int putch(const int __chr) {
  * for flexible cursor manipulation by allowing the user to set the
  * X-coordinate while keeping the current Y-coordinate unchanged.
  *
- * @param __x  The desired X-coordinate to set the cursor to.
+ * @param[in] x  The desired X-coordinate to set the cursor to.
  *
  * @since 0.2.0
  * @see   gotoy(cpos_t)
  * @see   gotoxy(cpos_t, cpos_t)
  */
-void gotox(const cpos_t __x) {
+void gotox(cpos_t const __x) {
     gotoxy(__x, wherey());
 }
 
@@ -611,13 +608,13 @@ void gotox(const cpos_t __x) {
  * flexibility in cursor positioning by allowing the user to set the
  * Y-coordinate while keeping the current X-coordinate unchanged.
  *
- * @param __y  The desired Y-coordinate to set the cursor to.
+ * @param[in] y  The desired Y-coordinate to set the cursor to.
  *
  * @since 0.2.0
  * @see   gotox(cpos_t)
  * @see   gotoxy(cpos_t, cpos_t)
  */
-void gotoy(const cpos_t __y) {
+void gotoy(cpos_t const __y) {
     gotoxy(wherex(), __y);
 }
 
