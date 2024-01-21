@@ -49,7 +49,7 @@
  *
  * @author    Ryuu Mitsuki
  * @version   0.2.0
- * @date      20 Jan 2024
+ * @date      21 Jan 2024
  * @copyright &copy; 2023 - 2024 Ryuu Mitsuki.
  *            Licensed under the GNU General Public License 3.0.
  */
@@ -125,6 +125,11 @@
 #    define __HAVE_STDINT_LIB
 #  endif  /* _MSC_VER && _MSC_VER >= 1600 */
 #endif  /* __STDC_VERSION__ */
+
+/* In C++, the `cstdint` header is provided by the compilers in version C++11 (201103L) */
+#if defined(__cplusplus) && __cplusplus >= 201103L
+#  define __HAVE_STDINT_LIB
+#endif  /* __cplusplus */
 
 /* Import the 'stdint.h' header if the compiler have it, otherwise define manually */
 #ifdef __HAVE_STDINT_LIB
@@ -216,7 +221,7 @@ static const int __getch(uint8_t __echo) {
     __newterm = __oldterm;  /* Copy the original terminal setting */
     __newterm.c_lflag &= ~ICANON;
 
-    if (__echo != 0) {
+    if (__echo) {
         __newterm.c_lflag &= ECHO;   /* With echo */
     } else {
         __newterm.c_lflag &= ~ECHO;  /* Without echo */
@@ -232,10 +237,14 @@ static const int __getch(uint8_t __echo) {
     GetConsoleMode(handler, &console_mode);
     original_mode = console_mode;  /* Copy the original console setting */
 
-    if (__echo != 0) {
-        console_mode &= ~ENABLE_LINE_INPUT;  /* With echo */
+    /* Set the console mode to include line input */
+    console_mode &= ENABLE_LINE_INPUT;
+    if (__echo) {
+        /* If echoing is required, include echo input in the console mode */
+        console_mode &= ENABLE_ECHO_INPUT;
     } else {
-        console_mode &= ~ENABLE_ECHO_INPUT;  /* Without echo */
+        /* If echoing is not required, exclude echo input from the console mode */
+        console_mode &= ~ENABLE_ECHO_INPUT;
     }
     /* Apply the customized console setting */
     SetConsoleMode(handler, console_mode);
@@ -255,7 +264,7 @@ static const int __getch(uint8_t __echo) {
  * systems, it uses ANSI escape sequences to query the cursor position. On Windows, it
  * utilizes the Windows Console API to obtain the cursor coordinates.
  *
- * This function is designed for internal use only and it's being used by these API functions:
+ * This function is designed for internal use only and it is being used by these API functions:
  *   - `wherex()`                  - Retrieves the current X-coordinate of the cursor position
  *   - `wherey()`                  - Retrieves the current Y-coordinate of the cursor position
  *   - `wherexy(cpos_t*, cpos_t*)` - Retrieves the current both coordinates of the cursor position
@@ -283,8 +292,11 @@ static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
     CONSOLE_SCREEN_BUFFER_INFO csbi;
 
     if (GetConsoleScreenBufferInfo(handler, &csbi)) {
-        x = csbi.dwCursorPosition.X + 1;
-        y = csbi.dwCursorPosition.Y + 1;
+        /* The coordinates are zero-based, it is unnecessary
+         * to add one to each coordinate
+         */
+        x = csbi.dwCursorPosition.X;
+        y = csbi.dwCursorPosition.Y;
     }
 #else  /* Body function for Unix systems */
     printf("%s6n", __prefix);
