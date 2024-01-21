@@ -186,9 +186,21 @@ typedef int64_t                 ssize_t;
 #  include <termios.h>  /* POSIX header for terminal I/O control */
 #endif  /* _WIN32 || __WIN32__ || __MINGW32__ */
 
-
+/**
+ * @brief Enumeration representing the echo behavior for the @ref __getch function.
+ *
+ * This enum enhances readability and ensures that the intended behavior is clear
+ * when using the @ref __getch function to read characters from the terminal.
+ *
+ * @since 0.3.0
+ * @see   __getch(GETCH_ECHO)
+ */
+typedef enum {
+    GETCH_NO_ECHO = 0,   /**< Represents the option to read a character without echoing it to the terminal. */
+    GETCH_USE_ECHO = 1   /**< Represents the option to read a character with echoing it to the terminal. */
+} GETCH_ECHO;
 typedef unsigned int  cpos_t;              /**< An abbreviation from **Cursor Position Type**, represents the cursor position. */
-static const char *   __prefix = "\033[";  /**< Prefix of ANSI escape sequences. Internal use only. */
+static const char *   __prefix = "\033[";  /**< Prefix of ANSI escape sequences.\ **Internal use only**. */
 
 #ifdef __cplusplus
 extern "C" {
@@ -202,11 +214,11 @@ extern "C" {
  * where user input needs to be read without displaying the entered characters.
  *
  * This is designed for internal use only and it is used by these two API functions:
- *   - `getch()` - is an alias for `__getch(0)` (without echo)
- *   - `getche()` - is an alias for `__getch(1)` (with echo)
+ *   - `getch()` - is an alias for `__getch(GETCH_NO_ECHO)` (without echo)
+ *   - `getche()` - is an alias for `__getch(GETCH_USE_ECHO)` (with echo)
  *
- * @param  __echo  Flag indicating whether to echo the input (0 for no echo, any positive value for echo).
- * @return         The retrieved character from the standard input.
+ * @param[in] __echo  Flag indicating whether to echo the input, see @ref GETCH_ECHO enum.
+ * @return            The retrieved character from the standard input.
  *
  * @note This function is platform-dependent. On Unix systems, it uses `termios.h` header
  *       to customize the terminal settings, while on Windows, it manipulates the
@@ -217,7 +229,7 @@ extern "C" {
  *
  * @since 0.1.0
  */
-static const int __getch(uint8_t __echo) {
+static int __getch(GETCH_ECHO const __echo) {
     int __c;
 
 #if defined(__UNIX_PLATFORM) || defined(__UNIX_PLATFORM_ANDRO)
