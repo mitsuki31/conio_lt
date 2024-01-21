@@ -57,6 +57,10 @@
 #ifndef CONIO_LT_H_
 #define CONIO_LT_H_
 
+/* Header Version */
+#undef  __CONIO_LT_VER__
+#define __CONIO_LT_VER__  0x030
+
 /* Standard IO header */
 #include <stdio.h>
 
