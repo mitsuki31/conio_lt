@@ -85,6 +85,13 @@
 #      define __MINGWC_64
 #    endif  /* __MINGW64__ */
 #  endif  /* __MINGW32__ */
+/* Detect whether the shell environment is Cygwin or MSYS2 */
+#  ifdef __CYGWIN__
+#    define __CYGWIN_ENV  /* Use Cygwin environment */
+#    ifdef __MSYS__
+#      define __MSYS_ENV  /* Use MSYS2 environment */
+#    endif  /* __MSYS__ */
+#  endif  /* __CYGWIN__ */
 #endif  /* _WIN32 || __WIN32__ */
 
 /* Warn the users if using pre-C99 compilers and specific compilers
@@ -343,58 +350,106 @@ void gotoxy(const cpos_t __x, const cpos_t __y) {
 /**
  * @brief Clears the terminal screen.
  *
- * This function clears the terminal screen by sending control sequences
- * to the standard output using `printf`.
+ * This function provides a platform-dependent way to clear the terminal screen.
+ * On Windows, it uses the system command `"cls"` for Command Prompt or PowerShell.
+ * On Unix-like systems, it uses ANSI escape sequences for clearing the screen
+ * (including the **MSYS2** and **Cygwin** environment).
  *
- * The function uses the following control sequences.
+ * On Unix-like systems, this function uses the following control sequences.
  *
- * | Control sequence | Description |
- * | ---------------- | ----------- |
- * | `"\033[0m"`      | Resets any text formatting or color attributes. |
- * | `"\033[1J"`      | Clears the screen from the cursor position to the end of the screen. |
- * | `"\033[H"`       | Moves the cursor to the top-left corner of the screen. |
+ * | Control sequence | Description                                                            |
+ * | ---------------- | ---------------------------------------------------------------------- |
+ * | `"\033[0m"`      | Resets any text formatting or color attributes.                        |
+ * | `"\033[1J"`      | Clears the screen from the cursor position to the end of the screen.   |
+ * | `"\033[H"`       | Moves the cursor to the top-left corner of the screen (home position). |
  *
  * By combining these control sequences in a single `printf` statement,
  * the function achieves the effect of clearing the terminal screen.
  *
- * @note  This function does not prevent the screen from scrolling. If you
- *        want to reset entire the screen, use the @ref rstscr(void) instead.
+ * @note
+ *   - On Unix-like systems, ANSI escape sequences are used. Some terminals may not
+ *     support these sequences, affecting the clearing functionality.
+ *   - The function's behavior may differ in environments like **Cygwin** or **MSYS2**
+ *     on Windows, and users are encouraged to be aware of such variations. In such
+ *     environments, the function will use the control sequences to clear the terminal
+ *     screen instead of using the `"cls"` command.
+ *   - This function does not prevent the screen from scrolling. If you want to reset
+ *     entire the screen, use the @ref rstscr(void) instead.
+ *
+ * @warning This function relies on system-specific commands and escape sequences, and
+ *          its behavior may not be consistent across all terminals or environments.
+ *          Usage in environments like **Cygwin** or **MSYS2** on Windows may use control
+ *          sequences instead, but it might not behave as expected.
  *
  * @since 0.1.0
  * @see   rstscr(void)
  */
 void clrscr(void) {
+/* Windows system but not using the Cygwin neither MSYS2 environment,
+ * which means it uses the Command Prompt or PowerShell
+ */
+#if defined(__WIN_PLATFORM_32) && ! defined(__CYGWIN_ENV)
+    system("cls");  /* Simply use the built-in command */
+/* Windows system but using Cygwin or MSYS2 environment, or Unix-like systems */
+#elif (defined(__WIN_PLATFORM_32) && defined(__CYGWIN_ENV)) || defined(__UNIX_PLATFORM)
     printf("%s0m%s1J%sH", __prefix, __prefix, __prefix);
+#endif  /* __WIN_PLATFORM_32 && ! __CYGWIN_ENV */
 }
 
 /**
  * @brief Resets and clears the terminal screen.
  *
- * This function resets any text formatting or color attributes,
- * clears the entire terminal screen, and moves the cursor to the
- * top-left corner. It achieves this effect by sending the appropriate
- * control sequences to the standard output using `printf`.
+ * This function provides a platform-dependent way to reset and clear the terminal screen.
+ * On Windows, it uses the system command `"cls"` for Command Prompt or PowerShell.
+ * On Unix-like systems, it uses ANSI escape sequences for clearing the screen
+ * (including the **MSYS2** and **Cygwin** environment).
  *
- * The function uses the following control sequences.
+ * On Windows systems, there is no difference between this function and @ref clrscr(),
+ * because they both function are used `"cls"` command, which is Windows built-in
+ * command and utilizes the `system` function to execute shell command within C code
+ * from `windows.h` header.
  *
- * | Control sequence | Description |
- * | ---------------- | ----------- |
+ * On Unix-like systems, this function uses the following control sequences.
+ *
+ * | Control sequence | Description                                     |
+ * | ---------------- | ----------------------------------------------- |
  * | `"\033[0m"`      | Resets any text formatting or color attributes. |
- * | `"\033c"`        | Resets and clears the entire terminal screen. |
+ * | `"\033c"`        | Resets and clears the entire terminal screen.   |
  *
  * By combining these control sequences in a single `printf` statement,
  * the function achieves the effect of resetting and clearing the terminal
  * screen.
  *
- * @note  This function prevents the screen from scrolling by clearing
- *        the entire screen. If you only want to clear the screen without
- *        preventing scrolling, consider using the @ref clrscr(void) function.
+ * @note
+ *   - On Unix-like systems, ANSI escape sequences are used. Some terminals may not
+ *     support these sequences, affecting the clearing functionality.
+ *   - The function's behavior may differ in environments like **Cygwin** or **MSYS2**
+ *     on Windows, and users are encouraged to be aware of such variations. In such
+ *     environments, the function will use the control sequences to reset the terminal
+ *     screen instead of using the `"cls"` command.
+ *   - This function prevents the screen from scrolling by clearing the entire screen.
+ *     If you only want to clear the screen without preventing scrolling and resetting,
+ *     consider using the @ref clrscr(void) function. But in Windows systems, both
+ *     functions will behave the same due to use of `"cls"` command in both functions.
+ *
+ * @warning This function relies on system-specific commands and escape sequences, and
+ *          its behavior may not be consistent across all terminals or environments.
+ *          Usage in environments like **Cygwin** or **MSYS2** on Windows may use control
+ *          sequences instead, but it might not behave as expected.
  *
  * @since 0.2.0
  * @see   clrscr(void)
  */
 void rstscr(void) {
+/* Windows system but not using the Cygwin neither MSYS2 environment,
+ * which means it uses the Command Prompt or PowerShell
+ */
+#if defined(__WIN_PLATFORM_32) && ! defined(__CYGWIN_ENV)
+    system("cls");
+/* Unix-like systems (including the MSYS2 and Cygwin environment) */
+#elif (defined(__WIN_PLATFORM_32) && defined(__CYGWIN_ENV)) || defined(__UNIX_PLATFORM)
     printf("%s0m\033c", __prefix);  /* "\033[0m\033c" */
+#endif  /* __WIN_PLATFORM_32 && ! __CYGWIN_ENV */
 }
 
 /**
@@ -564,5 +619,7 @@ void gotoy(const cpos_t __y) {
 #undef __WIN_PLATFORM_64
 #undef __MINGWC_32
 #undef __MINGWC_64
+#undef __CYGWIN_ENV
+#undef __MSYS_ENV
 
 #endif /* CONIO_LT_H_ */
