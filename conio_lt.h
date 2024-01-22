@@ -354,6 +354,13 @@ static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
  * This function moves the cursor on the terminal screen to the specified coordinates.
  * It takes two integer parameters, `x` and `y`, representing the X and Y coordinates respectively.
  *
+ * Example
+ * -------
+ * ```c
+ * // Move the cursor to the top-left
+ * gotoxy(1, 1);
+ * ```
+ *
  * @param[in] x  The X-coordinate to move the cursor to.
  * @param[in] y  The Y-coordinate to move the cursor to.
  *
@@ -392,10 +399,10 @@ void gotoxy(cpos_t const x, cpos_t const y) {
  *   - This function does not prevent the screen from scrolling. If you want to reset
  *     entire the screen, use the @ref rstscr(void) instead.
  *
- * @warning This function relies on system-specific commands and escape sequences, and
- *          its behavior may not be consistent across all terminals or environments.
- *          Usage in environments like **Cygwin** or **MSYS2** on Windows may use control
- *          sequences instead, but it might not behave as expected.
+ * @attention This function relies on system-specific commands and escape sequences, and
+ *            its behavior may not be consistent across all terminals or environments.
+ *            Usage in environments like **Cygwin** or **MSYS2** on Windows may use control
+ *            sequences instead, but it might not behave as expected.
  *
  * @since 0.1.0
  * @see   rstscr(void)
@@ -448,10 +455,10 @@ void clrscr(void) {
  *     consider using the @ref clrscr(void) function. But in Windows systems, both
  *     functions will behave the same due to use of `"cls"` command in both functions.
  *
- * @warning This function relies on system-specific commands and escape sequences, and
- *          its behavior may not be consistent across all terminals or environments.
- *          Usage in environments like **Cygwin** or **MSYS2** on Windows may use control
- *          sequences instead, but it might not behave as expected.
+ * @attention This function relies on system-specific commands and escape sequences, and
+ *            its behavior may not be consistent across all terminals or environments.
+ *            Usage in environments like **Cygwin** or **MSYS2** on Windows may use control
+ *            sequences instead, but it might not behave as expected.
  *
  * @since 0.2.0
  * @see   clrscr(void)
@@ -521,6 +528,12 @@ int getche(void) {
  * This function retrieves the current X-coordinate of the cursor on the terminal screen.
  * The returned coordinate value always positive value.
  *
+ * Example
+ * -------
+ * ```c
+ * cpos_t cur_x = wherex();
+ * ```
+ *
  * @return Returns the X-coordinate of the cursor.
  *
  * @since  0.1.0
@@ -539,6 +552,12 @@ cpos_t wherex(void) {
  *
  * This function retrieves the current Y-coordinate of the cursor on the terminal screen.
  * The returned coordinate value always positive value.
+ *
+ * Example
+ * -------
+ * ```c
+ * cpos_t cur_y = wherey();
+ * ```
  *
  * @return Returns the Y-coordinate of the cursor.
  *
@@ -562,6 +581,13 @@ cpos_t wherey(void) {
  * To use this function, provide the addresses of variables for X and Y
  * to store the coordinates.
  *
+ * Example
+ * -------
+ * ```c
+ * cpos_t cur_x, cur_y;
+ * wherexy(&cur_x, &cur_y);
+ * ```
+ *
  * @param[in,out] x  Pointer to the variable where the X-coordinate will be stored.
  * @param[in,out] y  Pointer to the variable where the Y-coordinate will be stored.
  *
@@ -582,16 +608,20 @@ void wherexy(cpos_t* x, cpos_t* y) {
  *
  * @since 0.1.0
  */
-int putch(int const __c) {
-    return putchar(__c);
+int putch(int const c) {
+    return putchar(c);
 }
 
 /**
  * @brief Sets the cursor position to the specified X-coordinate,
  *        maintaining the current Y-coordinate.
  *
- * This function serves as an alias for `gotoxy(x, wherey())`. It allows
- * for flexible cursor manipulation by allowing the user to set the
+ * This function serves as an alias for:
+ * ```c
+ * gotoxy(x, wherey());
+ * ```
+ *
+ * It allows for flexible cursor manipulation by allowing the user to set the
  * X-coordinate while keeping the current Y-coordinate unchanged.
  *
  * @param[in] x  The desired X-coordinate to set the cursor to.
@@ -600,16 +630,20 @@ int putch(int const __c) {
  * @see   gotoy(cpos_t)
  * @see   gotoxy(cpos_t, cpos_t)
  */
-void gotox(cpos_t const __x) {
-    gotoxy(__x, wherey());
+void gotox(cpos_t const x) {
+    gotoxy(x, wherey());
 }
 
 /**
  * @brief Sets the cursor position to the specified Y-coordinate,
  *        maintaining the current X-coordinate.
  *
- * This function serves as an alias for `gotoxy(wherex(), y)`. It provides
- * flexibility in cursor positioning by allowing the user to set the
+ * This function serves as an alias for:
+ * ```c
+ * gotoxy(wherex(), y);
+ * ```
+ * 
+ * It provides flexibility in cursor positioning by allowing the user to set the
  * Y-coordinate while keeping the current X-coordinate unchanged.
  *
  * @param[in] y  The desired Y-coordinate to set the cursor to.
@@ -618,8 +652,8 @@ void gotox(cpos_t const __x) {
  * @see   gotox(cpos_t)
  * @see   gotoxy(cpos_t, cpos_t)
  */
-void gotoy(cpos_t const __y) {
-    gotoxy(wherex(), __y);
+void gotoy(cpos_t const y) {
+    gotoxy(wherex(), y);
 }
 
 #ifdef __cplusplus
