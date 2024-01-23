@@ -393,7 +393,7 @@ void gotoxy(cpos_t const x, cpos_t const y) {
 }
 
 /**
- * @brief Clears the terminal screen.
+ * @brief Clears without resetting the terminal screen.
  *
  * This function provides a platform-dependent way to clear the terminal screen.
  * On Windows, it uses the system command `"cls"` for Command Prompt or PowerShell.
@@ -411,15 +411,14 @@ void gotoxy(cpos_t const x, cpos_t const y) {
  * By combining these control sequences in a single `printf` statement,
  * the function achieves the effect of clearing the terminal screen.
  *
- * @note
- *   - On Unix-like systems, ANSI escape sequences are used. Some terminals may not
- *     support these sequences, affecting the clearing functionality.
- *   - The function's behavior may differ in environments like **Cygwin** or **MSYS2**
- *     on Windows, and users are encouraged to be aware of such variations. In such
- *     environments, the function will use the control sequences to clear the terminal
- *     screen instead of using the `"cls"` command.
- *   - This function does not prevent the screen from scrolling. If you want to reset
- *     entire the screen, use the @ref rstscr(void) instead.
+ * @note - On Unix-like systems, ANSI escape sequences are used. Some terminals may not
+ *         support these sequences, affecting the clearing functionality.
+ *       - The function's behavior may differ in environments like **Cygwin** or **MSYS2**
+ *         on Windows, and users are encouraged to be aware of such variations. In such
+ *         environments, the function will use the control sequences to clear the terminal
+ *         screen instead of using the `"cls"` command.
+ *       - This function does not prevent the screen from scrolling. If you want to reset
+ *         entire the screen, use the @ref rstscr(void) instead.
  *
  * @attention This function relies on system-specific commands and escape sequences, and
  *            its behavior may not be consistent across all terminals or environments.
@@ -465,17 +464,16 @@ void clrscr(void) {
  * the function achieves the effect of resetting and clearing the terminal
  * screen.
  *
- * @note
- *   - On Unix-like systems, ANSI escape sequences are used. Some terminals may not
- *     support these sequences, affecting the clearing functionality.
- *   - The function's behavior may differ in environments like **Cygwin** or **MSYS2**
- *     on Windows, and users are encouraged to be aware of such variations. In such
- *     environments, the function will use the control sequences to reset the terminal
- *     screen instead of using the `"cls"` command.
- *   - This function prevents the screen from scrolling by clearing the entire screen.
- *     If you only want to clear the screen without preventing scrolling and resetting,
- *     consider using the @ref clrscr(void) function. But in Windows systems, both
- *     functions will behave the same due to use of `"cls"` command in both functions.
+ * @note - On Unix-like systems, ANSI escape sequences are used. Some terminals may not
+ *         support these sequences, affecting the clearing functionality.
+ *       - The function's behavior may differ in environments like **Cygwin** or **MSYS2**
+ *         on Windows, and users are encouraged to be aware of such variations. In such
+ *         environments, the function will use the control sequences to reset the terminal
+ *         screen instead of using the `"cls"` command.
+ *       - This function prevents the screen from scrolling by clearing the entire screen.
+ *         If you only want to clear the screen without preventing scrolling and resetting,
+ *         consider using the @ref clrscr(void) function. But in Windows systems, both
+ *         functions will behave the same due to use of `"cls"` command in both functions.
  *
  * @attention This function relies on system-specific commands and escape sequences, and
  *            its behavior may not be consistent across all terminals or environments.
@@ -515,9 +513,16 @@ int ungetch(int const c) {
 }
 
 /**
- * @brief Reads a single character from the standard input without echoing it.
+ * @brief Reads a single character from the standard input without buffer.
  *
- * This function reads a single character from the standard input without echoing it.
+ * This function reads a single character from the standard input without buffer.
+ *
+ * Example
+ * -------
+ * ```c
+ * // You can either use `char` or `int`, it is up to your preference
+ * char c = getch();  // Wait until user input a character
+ * ```
  *
  * @return Returns the character read from the standard input.
  *
@@ -530,9 +535,16 @@ int getch(void) {
 }
 
 /**
- * @brief Reads a single character from the standard input and then echoing it.
+ * @brief Reads a single character from the standard input with buffer.
  *
- * This function reads a single character from the standard input and then echoing it.
+ * This function reads a single character from the standard input with buffer.
+ *
+ * Example
+ * -------
+ * ```c
+ * // You can either use `char` or `int`, it is up to your preference
+ * char c = getche();  // Wait until user input a character
+ * ```
  *
  * @return Returns the character read from the standard input.
  *
