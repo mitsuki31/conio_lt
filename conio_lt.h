@@ -48,8 +48,8 @@
  *  - wherexy(cpos_t*, cpos_t*)
  *
  * @author    Ryuu Mitsuki
- * @version   0.2.0
- * @date      21 Jan 2024
+ * @version   0.3.0-beta
+ * @date      23 Jan 2024
  * @copyright &copy; 2023 - 2024 Ryuu Mitsuki.
  *            Licensed under the GNU General Public License 3.0.
  */
@@ -351,23 +351,45 @@ static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
 /**
  * @brief Moves the cursor to the specified coordinates on the terminal screen.
  *
- * This function moves the cursor on the terminal screen to the specified coordinates.
- * It takes two integer parameters, `x` and `y`, representing the X and Y coordinates respectively.
+ * This function moves the cursor to the specified (`x`, `y`) position on the terminal screen.
+ * On Windows, it utilizes the [`SetConsoleCursorPosition`](https://learn.microsoft.com/en-us/windows/console/setconsolecursorposition)
+ * function provided by `windows.h`, and on Unix-like systems, it uses ANSI escape sequences
+ * to achieve the same effect.
+ *
+ * @param[in] x  The horizontal (column) position to move the cursor to.
+ * @param[in] y  The vertical (row) position to move the cursor to.
  *
  * Example
  * -------
  * ```c
  * // Move the cursor to the top-left
- * gotoxy(1, 1);
+ * gotoxy(0, 0);
  * ```
  *
- * @param[in] x  The X-coordinate to move the cursor to.
- * @param[in] y  The Y-coordinate to move the cursor to.
+ * @note On Unix-like systems, this function uses the ANSI escape sequence `"\033[{y};{x}f"`
+ *       to move the cursor to the specified position. It supports both **MSYS2** and
+ *       **Cygwin** environments. However, the behavior may vary across different terminals.
+ *
+ * @attention The ANSI escape sequence used on Unix-like systems might not be supported
+ *            by all terminals.
  *
  * @since 0.1.0
  */
 void gotoxy(cpos_t const x, cpos_t const y) {
+/* Windows system but not using the Cygwin neither MSYS2 environment,
+ * which means it uses the Command Prompt or PowerShell
+ */
+#if defined(__WIN_PLATFORM_32) && ! defined(__CYGWIN_ENV)
+    /* Declare a new COORD variable with desired coordinates */
+    COORD coord;
+    /* These two must be explicitly converted to SHORT
+     * More details, visit <https://learn.microsoft.com/en-us/windows/console/coord-str>
+     */
+    coord.X = (SHORT) x;  /* X-coordinate */
+    coord.Y = (SHORT) y;  /* Y-coordinate */
+#elif (defined(__WIN_PLATFORM_32) && defined(__CYGWIN_ENV)) || defined(__UNIX_PLATFORM)
     printf("%s%u;%uf", __prefix, y, x);  /* "\033[{y};{x}f" */
+#endif  /* __WIN_PLATFORM_32 && ! __CYGWIN_ENV */
 }
 
 /**
