@@ -49,7 +49,7 @@
  *
  * @author    Ryuu Mitsuki
  * @version   0.3.0-beta
- * @date      23 Jan 2024
+ * @date      25 Jan 2024
  * @copyright &copy; 2023 - 2024 Ryuu Mitsuki.
  *            Licensed under the GNU General Public License 3.0.
  */
@@ -59,9 +59,10 @@
 
 /* Header Version */
 #undef  __CONIO_LT_VER__
+/** Represents the version of this header file (`conio_lt.h`) in hexadecimal value */
 #define __CONIO_LT_VER__  0x030
 
-/* Standard IO header */
+/* C standard I/O header */
 #include <stdio.h>
 
 #if defined(unix) || defined(__unix__) || defined(__unix)
@@ -80,8 +81,8 @@
 #  ifdef _WIN64  /* 64 bit or x64 architecture */
 #    define __WIN_PLATFORM_64
 #  endif  /* _WIN64 */
-/* The __MINGW32__ macro is defined by MinGW compiler and defined both
- * on 32 bit either 64 bit.
+/* The __MINGW32__ macro are defined by MinGW compiler and defined both
+ * on 32-bit and 64-bit.
  */
 #  ifdef __MINGW32__  /* MinGW compiler */
 #    define __MINGWC_32
@@ -98,73 +99,67 @@
 #  endif  /* __CYGWIN__ */
 #endif  /* _WIN32 || __WIN32__ */
 
-/* Warn the users if using pre-C99 compilers and specific compilers
- * that is not appropriate with code in this header file.
+/* Warn users if they are using pre-C99 compilers or specific compilers
+ * that may not be fully compatible with this header file.
+ *
+ * The macro __STDC__ is defined by C compilers to indicate conformance to
+ * the ANSI/ISO C standard. However, note that __STDC__ is also defined in
+ * Borland C++ environments but not in Microsoft Visual C++. For Microsoft
+ * Visual C++, the _MSC_VER macro is used to indicate the compiler version.
  */
-#if ((defined(__STDC_VERSION__) && __STDC_VERSION__ == 199409L /* C94 */)   \
-        || (defined(__STDC__) && !defined(__STDC_VERSION__))                \
-        || (defined(__BORLANDC__) && __BORLANDC__ < 0x520 /* v5.0 */)       \
-        || (defined(_MSC_VER) && _MSC_VER < 1600 /* Visual C++ 2010 */))    \
-        && !defined(__cplusplus)  /* Warn only if using C compiler */
+#if ! defined(__cplusplus)  /* For C compilers */
+# if ((defined(__STDC_VERSION__) && __STDC_VERSION__ <= 199409L /* <= C94 */)   \
+        || (defined(__STDC__) && ! defined(__STDC_VERSION__) /* Pre-C99 */)     \
+        || (defined(__BORLANDC__) && __BORLANDC__ < 0x520 /* < 5.0 */)          \
+        || (defined(_MSC_VER) && _MSC_VER < 1600 /* < Visual C++ 2010 */))
 #warning \
   This header file may not fully support pre-C99 compilers.\
-  Consider using a C99-compliant compiler.
-#endif  /* Pre-C99 compiler warn use */
-
-#if defined(__cplusplus) && __cplusplus < 201103L  /* C++11 */
+  Consider using a C99-compliant compiler for optimal compatibility.
+# else
+#  define __HAVE_STDINT_LIB
+# endif  /* C */
+#else  /* For C++ compilers */
+# if __cplusplus < 201103L  /* C++11 */
 #warning \
   This header file may not fully support pre-C++11 compilers.\
-  Consider using a C++11 or later compiler.
-#endif  /* Pre-C++11 compiler warn use */
-
-
-/* __STDC__ is a macro defined by C compilers that the compiler is conforming
- * to the ANSI/ISO C standard. However, this macro are also defined in Borland C++
- * environment but not in Microsoft Visual C++. Microsoft Visual C++ compiler uses
- * the _MSC_VER macro to indicate the version of the compiler.
- */
-#ifdef __STDC__
-#  if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L /* C99 */)   \
-        || (defined(__BORLANDC__) && __BORLANDC__ >= 0x520 /* v5.0 */)
-#    define __HAVE_STDINT_LIB
-#  endif  /* __STDC_VERSION__ >= 199901L || __BORLANDC__ >= 0x520 */
-#else
-/* Check for Microsoft Visual C++ compiler and use its fixed-width types.
- * _MSC_VER is a macro defined by Microsoft Visual C++ compilers.
- */
-#  if defined(_MSC_VER) && _MSC_VER >= 1600  /* Visual C++ 2010 */
-#    define __HAVE_STDINT_LIB
-#  endif  /* _MSC_VER && _MSC_VER >= 1600 */
-#endif  /* __STDC_VERSION__ */
-
-/* In C++, the `cstdint` header is provided by the compilers in version C++11 (201103L) */
-#if defined(__cplusplus) && __cplusplus >= 201103L
+  Consider using a C++11 or later compiler for optimal compatibility.
+# else
 #  define __HAVE_STDINT_LIB
-#endif  /* __cplusplus */
+# endif  /* C++ */
+#endif  /* Warn for pre-C99 & pre-C++11 compilers */
 
-/* Import the 'stdint.h' header if the compiler have it, otherwise define manually */
-#ifdef __HAVE_STDINT_LIB
-#  include <stdint.h>  /* Standard header for fixed-width integer types */
-#  undef __HAVE_STDINT_LIB
-#endif
+/* Import the 'stdint.h' header if the compiler have it */
+#if defined(__HAVE_STDINT_LIB) || defined(HAVE_STDINT_H)
+# include <stdint.h>  /* Standard header for fixed-width integer types */
+#endif  /* __HAVE_STDINT_LIB || HAVE_STDINT_H */
 
-/* Handle platform-specific headers for console I/O using specific preprocessor macros */
-#if defined(__WIN_PLATFORM_32) || defined(__MINGWC_32)
-#  include <windows.h>  /* Windows-specific header for terminal I/O control */
 
-/*:: Minor replacement for `unistd.h` header file ::*/
+#if ! (defined(__HAVE_STDINT_LIB) || defined(HAVE_STDINT_H)) && defined(_CONIO_LT_DEF_STDINT)
+/**
+ * This section provides a minimal replacement for the `stdint.h` header,
+ * defining fixed-width integer types for environments where the standard
+ * header may not be available, especially in Windows systems. It includes
+ * definitions for 8, 16, and 32-bit signed and unsigned integers.
+ *
+ * @note 64-bit fixed-width integers are not included here due to simplicity
+ *       and the assumption that they are not needed for the specific use case.
+ *
+ * You can define the `_CONIO_LT_DEF_STDINT` macro if you want to use this
+ * <stdint.h> header replacement. We have limited the redefinition
+ * of this header due to some issues with the GCC compiler on MSYS2 (Windows).
+ * So we strongly expect to use this header file with compilers version
+ * C99 (for C) or later, C++11 (for C++) or later.
+ *
+ * For the use of compilers with the versions mentioned above, this will
+ * not define the replacement for the `stdint.h` header. And the
+ * `_CONIO_LT_DEF_STDINT` macro that has been defined will do nothing.
+ * This is because the `stdint.h` header was introduced in C99 standard library.
+ * You can visit to <https://en.m.wikibooks.org/wiki/C_Programming/stdint.h>,
+ * if you want to read more further about `stdint.h` header file.
+ * @{
+ */
+/*:: Minor replacement for `stdint.h` header file ::*/
 /*:: -------------------------------------------- ::*/
-/* File number of file descriptors (stdin, stdout, stderr) */
-#define STDIN_FILENO    0
-#define STDOUT_FILENO   1
-#define STDERR_FILENO   2
-
-/* File permissions */
-#define R_OK  4  /* Read */
-#define W_OK  2  /* Write */
-/* #define X_OK  1 */  /* Execute - Unsupported in Windows file system */
-#define F_OK  0  /* Exists (as regular file) */
-
 /* Fixed-width integer types definition */
 typedef signed char             int8_t;    /* 8-bit */
 typedef unsigned char           uint8_t;   /* U 8-bit */
@@ -172,19 +167,45 @@ typedef signed short            int16_t;   /* 16-bit */
 typedef unsigned short          uint16_t;  /* U 16-bit */
 typedef signed int              int32_t;   /* 32-bit */
 typedef unsigned int            uint32_t;  /* U 32-bit */
-/* Use `long long` for 64-bit */
-#  if defined(__WIN_PLATFORM_64) || defined(__MINGWC_64)
-typedef signed long long        int64_t;   /* 64-bit */
-typedef unsigned long long      uint64_t;  /* U 64-bit */
-#  else
-typedef signed long             int64_t;   /* 64-bit */
-typedef unsigned long           uint64_t;  /* U 64-bit */
-#  endif  /* __WIN_PLATFORM_64 || __MINGWC_64 */
-typedef int64_t                 ssize_t;
+/* 64-bit fixed-width integers are not needed here */
 /*:: -------------------------------------------- ::*/
+/** @} */
+#endif  /* ! (__HAVE_STDINT_LIB || HAVE_STDINT_H) && _CONIO_LT_DEF_STDINT */
+
+/* Handle platform-specific headers for console I/O using specific preprocessor macros */
+#if defined(__WIN_PLATFORM_32) || defined(__MINGWC_32)
+# include <windows.h>  /* Windows-specific header for terminal I/O control */
+# define __HAVE_WINDOWS_API
+
+/*:: Minor replacement for `unistd.h` header file ::*/
+/*:: -------------------------------------------- ::*/
+/* File number of file descriptors (stdin, stdout, stderr) */
+# ifndef STDIN_FILENO
+#  define STDIN_FILENO    0
+# endif  /* STDIN_FILENO */
+
+# ifndef STDOUT_FILENO
+#  define STDOUT_FILENO   1
+# endif  /* STDOUT_FILENO */
+
+# ifndef STDERR_FILENO
+#  define STDERR_FILENO   2
+# endif  /* STDERR_FILENO */
+
+/* File permissions */
+# ifndef R_OK
+#  define R_OK  4  /* Read */
+# endif  /* R_OK */
+# ifndef W_OK
+#  define W_OK  2  /* Write */
+# endif  /* W_OK */
+/* #  define X_OK  1 */  /* Execute - Unsupported in Windows file system, use R_OK instead */
+# ifndef F_OK
+#  define F_OK  0  /* Exists (as regular file) */
+# endif  /* F_OK */
 #else
 /* On Windows environment, these headers were not provided by MinGW neither by Borland C++ compiler.
- * Because this library are only designed for Unix-like environment and non-standard C libraries.
+ * Because they are only designed for Unix-like (POSIX) environment and not part of standard C libraries.
  */
 #  include <unistd.h>
 #  include <termios.h>  /* POSIX header for terminal I/O control */
@@ -702,5 +723,7 @@ void gotoy(cpos_t const y) {
 #undef __MINGWC_64
 #undef __CYGWIN_ENV
 #undef __MSYS_ENV
+#undef __HAVE_STDINT_LIB
+#undef __HAVE_WINDOWS_API
 
 #endif /* CONIO_LT_H_ */
