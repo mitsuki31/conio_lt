@@ -224,8 +224,34 @@ typedef enum {
     GETCH_NO_ECHO = 0,   /**< Represents the option to read a character without echoing it to the terminal. */
     GETCH_USE_ECHO = 1   /**< Represents the option to read a character with echoing it to the terminal. */
 } GETCH_ECHO;
-typedef unsigned int  cpos_t;              /**< An abbreviation from **Cursor Position Type**, represents the cursor position. */
-static const char *   __prefix = "\033[";  /**< Prefix of ANSI escape sequences.\ **Internal use only**. */
+
+/**
+ * @brief Represents the cursor position type.
+ *
+ * This type, abbreviated as **Cursor Position Type** (`cpos_t`), is used to
+ * represent the cursor position. The size and signedness of `cpos_t` differ based
+ * on the platform.
+ *
+ * On Unix-like platforms or when Windows API is not available, `cpos_t` is
+ * equivalent to `int16_t` (`signed short`). When the Windows API is available,
+ * `cpos_t` is equivalent to `SHORT`.
+ * @{
+ */
+typedef 
+#if defined(__UNIX_PLATFORM) || ! defined(__HAVE_WINDOWS_API)
+/* - */ int16_t
+#elif defined(__HAVE_WINDOWS_API)
+/* - */ SHORT
+#endif  /* __UNIX_PLATFORM || ! __HAVE_WINDOWS_API */
+/* ---------- */ cpos_t;
+/** @} */
+
+#undef  ESC  /* Undefine if already exist before */
+/**
+ * An escape character (in octal value) to create the escape sequences.
+ * This escape character is equivalent to `"\x1b"`, representation in hexadecimal value.
+ */
+#define ESC  "\033"
 
 #ifdef __cplusplus
 extern "C" {
@@ -239,8 +265,8 @@ extern "C" {
  * where user input needs to be read without displaying the entered characters.
  *
  * This is designed for internal use only and it is used by these two API functions:
- *   - `getch()` - is an alias for `__getch(GETCH_NO_ECHO)` (without echo)
- *   - `getche()` - is an alias for `__getch(GETCH_USE_ECHO)` (with echo)
+ *   - `getch()` - is an alias for `__getch(GETCH_NO_ECHO)` (without buffer)
+ *   - `getche()` - is an alias for `__getch(GETCH_USE_ECHO)` (with buffer)
  *
  * @param[in] __echo  Flag indicating whether to echo the input, see @ref GETCH_ECHO enum.
  * @return            The retrieved character from the standard input.
@@ -343,7 +369,7 @@ static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
         y = csbi.dwCursorPosition.Y;
     }
 #else  /* Body function for Unix systems */
-    printf("%s6n", __prefix);
+    printf("%s[6n", ESC);
 
     /* If the input character neither equal with '0x1B' (escape character)
      * nor '0x5B' ('['), then return (leaving the '__x' and '__y' references
@@ -409,7 +435,7 @@ void gotoxy(cpos_t const x, cpos_t const y) {
     coord.X = (SHORT) x;  /* X-coordinate */
     coord.Y = (SHORT) y;  /* Y-coordinate */
 #elif (defined(__WIN_PLATFORM_32) && defined(__CYGWIN_ENV)) || defined(__UNIX_PLATFORM)
-    printf("%s%u;%uf", __prefix, y, x);  /* "\033[{y};{x}f" */
+    printf("%s[%u;%uf", ESC, y, x);  /* "\033[{y};{x}f" */
 #endif  /* __WIN_PLATFORM_32 && ! __CYGWIN_ENV */
 }
 
@@ -439,7 +465,7 @@ void gotoxy(cpos_t const x, cpos_t const y) {
  *         environments, the function will use the control sequences to clear the terminal
  *         screen instead of using the `"cls"` command.
  *       - This function does not prevent the screen from scrolling. If you want to reset
- *         entire the screen, use the @ref rstscr(void) instead.
+ *         entire the screen, use the @ref rstscr() instead.
  *
  * @attention This function relies on system-specific commands and escape sequences, and
  *            its behavior may not be consistent across all terminals or environments.
@@ -457,7 +483,7 @@ void clrscr(void) {
     system("cls");  /* Simply use the built-in command */
 /* Windows system but using Cygwin or MSYS2 environment, or Unix-like systems */
 #elif (defined(__WIN_PLATFORM_32) && defined(__CYGWIN_ENV)) || defined(__UNIX_PLATFORM)
-    printf("%s0m%s1J%sH", __prefix, __prefix, __prefix);
+    printf("%s[0m%s[1J%s[H", ESC, ESC, ESC);
 #endif  /* __WIN_PLATFORM_32 && ! __CYGWIN_ENV */
 }
 
@@ -493,7 +519,7 @@ void clrscr(void) {
  *         screen instead of using the `"cls"` command.
  *       - This function prevents the screen from scrolling by clearing the entire screen.
  *         If you only want to clear the screen without preventing scrolling and resetting,
- *         consider using the @ref clrscr(void) function. But in Windows systems, both
+ *         consider using the @ref clrscr() function. But in Windows systems, both
  *         functions will behave the same due to use of `"cls"` command in both functions.
  *
  * @attention This function relies on system-specific commands and escape sequences, and
@@ -512,7 +538,7 @@ void rstscr(void) {
     system("cls");
 /* Unix-like systems (including the MSYS2 and Cygwin environment) */
 #elif (defined(__WIN_PLATFORM_32) && defined(__CYGWIN_ENV)) || defined(__UNIX_PLATFORM)
-    printf("%s0m\033c", __prefix);  /* "\033[0m\033c" */
+    printf("%s[0m%sc", ESC, ESC);  /* "\033[0m\033c" */
 #endif  /* __WIN_PLATFORM_32 && ! __CYGWIN_ENV */
 }
 
