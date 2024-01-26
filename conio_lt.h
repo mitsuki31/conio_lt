@@ -49,7 +49,7 @@
  *
  * @author    Ryuu Mitsuki
  * @version   0.3.0-beta
- * @date      25 Jan 2024
+ * @date      26 Jan 2024
  * @copyright &copy; 2023 - 2024 Ryuu Mitsuki.
  *            Licensed under the GNU General Public License 3.0.
  */
@@ -221,8 +221,8 @@ typedef unsigned int            uint32_t;  /* U 32-bit */
  * @see   __getch(GETCH_ECHO)
  */
 typedef enum {
-    GETCH_NO_ECHO = 0,   /**< Represents the option to read a character without echoing it to the terminal. */
-    GETCH_USE_ECHO = 1   /**< Represents the option to read a character with echoing it to the terminal. */
+    GETCH_NO_ECHO,   /**< Represents the option to read a character without echoing it to the terminal. */
+    GETCH_USE_ECHO   /**< Represents the option to read a character with echoing it to the terminal. */
 } GETCH_ECHO;
 
 /**
