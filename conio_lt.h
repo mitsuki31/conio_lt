@@ -375,16 +375,16 @@ static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
      * nor '0x5B' ('['), then return (leaving the '__x' and '__y' references
      * unmodified) because it was unable to get current position of cursor.
      */
-    if (__getch(0) != 0x1B ^ __getch(0) != 0x5B) {
+    if (__getch(GETCH_NO_ECHO) != 0x1B ^ __getch(GETCH_NO_ECHO) != 0x5B) {
         return;
     }
 
     int temp;
-    while ((temp = __getch(0)) != 0x3B /* ';' */) {
+    while ((temp = __getch(GETCH_NO_ECHO)) != 0x3B /* ';' */) {
         y = y * 10 + (temp - '0');
     }
 
-    while ((temp = __getch(0)) != 0x52 /* 'R' */) {
+    while ((temp = __getch(GETCH_NO_ECHO)) != 0x52 /* 'R' */) {
         x = x * 10 + (temp - '0');
     }
 #endif  /* __WIN_PLATFORM_32 || __MINGWC_32 */
