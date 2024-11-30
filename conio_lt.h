@@ -258,6 +258,7 @@ typedef enum {
     GETCH_USE_ECHO   /**< Represents the option to read a character with send buffer to the terminal. */
 } GETCH_ECHO;
 
+/** @{ */
 /**
  * @brief Represents the cursor position type.
  *
@@ -268,14 +269,13 @@ typedef enum {
  * On Unix-like platforms or when Windows API is not available, `cpos_t` is
  * equivalent to `int16_t` (`signed short`). When the Windows API is available,
  * `cpos_t` is equivalent to `SHORT`.
- * @{
  */
 typedef 
-#if defined(__UNIX_PLATFORM) || ! defined(__HAVE_WINDOWS_API)
-/* - */ int16_t
-#elif defined(__HAVE_WINDOWS_API)
+#ifdef __HAVE_WINDOWS_API
 /* - */ SHORT
-#endif  /* __UNIX_PLATFORM || ! __HAVE_WINDOWS_API */
+#else
+/* - */ int16_t
+#endif  /* __HAVE_WINDOWS_API */
 /* ---------- */ cpos_t;
 /** @} */
 
