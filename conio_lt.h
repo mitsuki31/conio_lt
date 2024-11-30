@@ -254,8 +254,8 @@ typedef unsigned int            uint32_t;  /**< unsigned 32-bit */
  * @see   __getch(GETCH_ECHO)
  */
 typedef enum {
-    GETCH_NO_ECHO,   /**< Represents the option to read a character without echoing it to the terminal. */
-    GETCH_USE_ECHO   /**< Represents the option to read a character with echoing it to the terminal. */
+    GETCH_NO_ECHO,   /**< Represents the option to read a character without send buffer to the terminal. */
+    GETCH_USE_ECHO   /**< Represents the option to read a character with send buffer to the terminal. */
 } GETCH_ECHO;
 
 /**
@@ -446,7 +446,7 @@ static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
  * gotoxy(0, 0);
  * ```
  *
- * @note On Unix-like systems, this function uses the ANSI escape sequence `"\033[{y};{x}f"`
+ * @note On Unix-like systems, this function uses the ANSI escape sequence `"\033[{y};{x}H"`
  *       to move the cursor to the specified position. It supports both **MSYS2** and
  *       **Cygwin** environments. However, the behavior may vary across different terminals.
  *
