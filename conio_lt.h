@@ -702,13 +702,13 @@ cpos_t wherey(void) {
  * wherexy(&cur_x, &cur_y);
  * ```
  *
- * @param[in,out] x  Pointer to the variable where the X-coordinate will be stored.
- * @param[in,out] y  Pointer to the variable where the Y-coordinate will be stored.
+ * @param[in,out] px  Pointer to the variable where the X-coordinate will be stored.
+ * @param[in,out] py  Pointer to the variable where the Y-coordinate will be stored.
  *
  * @since 0.2.0.
  */
-void wherexy(cpos_t* x, cpos_t* y) {
-    __whereis_xy(x, y);
+void wherexy(cpos_t* px, cpos_t* py) {
+    __whereis_xy(px, py);
 }
 
 /**
@@ -756,7 +756,7 @@ void gotox(cpos_t const x) {
  * ```c
  * gotoxy(wherex(), y);
  * ```
- * 
+ *
  * It provides flexibility in cursor positioning by allowing the user to set the
  * Y-coordinate while keeping the current X-coordinate unchanged.
  *
