@@ -139,7 +139,7 @@
  *
  * @{
  */
-#if ! defined(__cplusplus)  /* For C compilers */
+#ifndef __cplusplus  /* For C compilers */
 # if ((defined(__STDC_VERSION__) && __STDC_VERSION__ <= 199409L /* <= C94 */)   \
         || (defined(__STDC__) && ! defined(__STDC_VERSION__) /* Pre-C94 */)     \
         || (defined(__BORLANDC__) && __BORLANDC__ < 0x520 /* < 5.0 */)          \
@@ -419,7 +419,7 @@ static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
     while ((temp = __getch(GETCH_NO_ECHO)) != 0x52 /* 'R' */) {
         x = x * 10 + (temp - '0');
     }
-#endif  /* __WIN_PLATFORM_32 || __MINGWC_32 */
+#endif  /* __HAVE_WINDOWS_API */
     /* Store and assign the cursor position */
     *__x = x;
     *__y = y;
@@ -465,7 +465,7 @@ void gotoxy(cpos_t const x, cpos_t const y) {
     }
 #else
     printf("%s[%u;%uH", ESC, y, x);  /* Use the correct ANSI escape sequence */
-#endif
+#endif  /* __HAVE_WINDOWS_API */
 }
 
 /**
@@ -511,7 +511,7 @@ void clrscr(void) {
 #if defined(__WIN_PLATFORM_32) && ! defined(__CYGWIN_ENV)
     system("cls");  /* Simply use the built-in command */
 /* Windows system but using Cygwin or MSYS2 environment, or Unix-like systems */
-#elif (defined(__WIN_PLATFORM_32) && defined(__CYGWIN_ENV)) || defined(__UNIX_PLATFORM)
+#else
     printf("%s[0m%s[1J%s[H", ESC, ESC, ESC);
 #endif  /* __WIN_PLATFORM_32 && ! __CYGWIN_ENV */
 }
@@ -566,7 +566,7 @@ void rstscr(void) {
 #if defined(__WIN_PLATFORM_32) && ! defined(__CYGWIN_ENV)
     system("cls");
 /* Unix-like systems (including the MSYS2 and Cygwin environment) */
-#elif (defined(__WIN_PLATFORM_32) && defined(__CYGWIN_ENV)) || defined(__UNIX_PLATFORM)
+#else
     printf("%s[0m%sc", ESC, ESC);  /* "\033[0m\033c" */
 #endif  /* __WIN_PLATFORM_32 && ! __CYGWIN_ENV */
 }
