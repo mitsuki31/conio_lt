@@ -49,7 +49,7 @@
  *
  * @author    Ryuu Mitsuki
  * @version   0.3.0-beta
- * @date      30 Nov 2024
+ * @date      01 Des 2024
  * @copyright &copy; 2023 - 2024 Ryuu Mitsuki.
  *            Licensed under the GNU General Public License 3.0.
  */
@@ -139,7 +139,7 @@
  *
  * @{
  */
-#if ! defined(__cplusplus)  /* For C compilers */
+#ifndef __cplusplus  /* For C compilers */
 # if ((defined(__STDC_VERSION__) && __STDC_VERSION__ <= 199409L /* <= C94 */)   \
         || (defined(__STDC__) && ! defined(__STDC_VERSION__) /* Pre-C94 */)     \
         || (defined(__BORLANDC__) && __BORLANDC__ < 0x520 /* < 5.0 */)          \
@@ -316,19 +316,16 @@ extern "C" {
 static int __getch(GETCH_ECHO const __echo) {
     int __c;
 
-#if defined(__UNIX_PLATFORM) || defined(__UNIX_PLATFORM_ANDRO)
-    /* Internal '__getch' function implementation for Unix systems only */
+#if defined(__UNIX_PLATFORM) || ! defined(__HAVE_WINDOWS_API)
+    /* Internal '__getch' function implementation for Unix systems and unimplemented Windows API */
     struct termios __oldterm, __newterm;
 
     tcgetattr(STDIN_FILENO, &__oldterm);
     __newterm = __oldterm;  /* Copy the original terminal setting */
     __newterm.c_lflag &= ~ICANON;
 
-    if (__echo) {
-        __newterm.c_lflag &= ECHO;   /* With echo */
-    } else {
-        __newterm.c_lflag &= ~ECHO;  /* Without echo */
-    }
+    if (__echo) __newterm.c_lflag &= ECHO;   /* With echo */
+    else __newterm.c_lflag &= ~ECHO;  /* Without echo */
 
     tcsetattr(STDIN_FILENO, TCSANOW, &__newterm);  /* Apply the customized terminal setting */
     __c = getchar();                               /* Retrieve the character */
@@ -340,18 +337,21 @@ static int __getch(GETCH_ECHO const __echo) {
     GetConsoleMode(handler, &console_mode);
     original_mode = console_mode;  /* Copy the original console setting */
 
-    /* Set the console mode to include line input */
-    console_mode &= ENABLE_LINE_INPUT;
-    if (__echo) {
-        /* If echoing is required, include echo input in the console mode */
-        console_mode &= ENABLE_ECHO_INPUT;
-    } else {
-        /* If echoing is not required, exclude echo input from the console mode */
-        console_mode &= ~ENABLE_ECHO_INPUT;
-    }
+    /* Set the console mode to disable line input and optionally disable echo input */
+    console_mode &= ~ENABLE_LINE_INPUT;
+    /* If echoing is required, include echo input in the console mode */
+    if (__echo) console_mode &= ENABLE_ECHO_INPUT;
+    /* If echoing is not required, exclude echo input from the console mode */
+    else console_mode &= ~ENABLE_ECHO_INPUT;
+
     /* Apply the customized console setting */
     SetConsoleMode(handler, console_mode);
-    __c = getchar();  /* Retrieve the input character */
+
+    /* Read a single character from the console input buffer */
+    DWORD dwRead = 0;
+    char buffer[1];
+    ReadConsole(handler, buffer, 1, &dwRead, NULL);
+    __c = buffer[0];  /* Extract the retrieved character */
 
     /* Restore original console mode */
     SetConsoleMode(handler, original_mode);
@@ -390,7 +390,7 @@ static int __getch(GETCH_ECHO const __echo) {
 static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
     cpos_t x = 0, y = 0;  /* Variables to hold the coordinates */
 
-#if defined(__WIN_PLATFORM_32) || defined(__MINGWC_32)
+#ifdef __HAVE_WINDOWS_API
     HANDLE handler = GetStdHandle(STD_OUTPUT_HANDLE);
     CONSOLE_SCREEN_BUFFER_INFO csbi;
 
@@ -401,16 +401,15 @@ static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
         x = csbi.dwCursorPosition.X;
         y = csbi.dwCursorPosition.Y;
     }
-#else  /* Body function for Unix systems */
+#else  /* Body function for Unix-like systems */
     printf("%s[6n", ESC);
 
     /* If the input character neither equal with '0x1B' (escape character)
      * nor '0x5B' ('['), then return (leaving the '__x' and '__y' references
      * unmodified) because it was unable to get current position of cursor.
      */
-    if (__getch(GETCH_NO_ECHO) != 0x1B ^ __getch(GETCH_NO_ECHO) != 0x5B) {
-        return;
-    }
+    if ((__getch(GETCH_NO_ECHO) != 0x1B)
+        ^ (__getch(GETCH_NO_ECHO) != 0x5B)) return;
 
     int temp;
     while ((temp = __getch(GETCH_NO_ECHO)) != 0x3B /* ';' */) {
@@ -420,7 +419,7 @@ static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
     while ((temp = __getch(GETCH_NO_ECHO)) != 0x52 /* 'R' */) {
         x = x * 10 + (temp - '0');
     }
-#endif  /* __WIN_PLATFORM_32 || __MINGWC_32 */
+#endif  /* __HAVE_WINDOWS_API */
     /* Store and assign the cursor position */
     *__x = x;
     *__y = y;
@@ -456,20 +455,17 @@ static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
  * @since 0.1.0
  */
 void gotoxy(cpos_t const x, cpos_t const y) {
-/* Windows system but not using the Cygwin neither MSYS2 environment,
- * which means it uses the Command Prompt or PowerShell
- */
-#if defined(__WIN_PLATFORM_32) && ! defined(__CYGWIN_ENV)
-    /* Declare a new COORD variable with desired coordinates */
-    COORD coord;
-    /* These two must be explicitly converted to SHORT
-     * More details, visit <https://learn.microsoft.com/en-us/windows/console/coord-str>
-     */
-    coord.X = (SHORT) x;  /* X-coordinate */
-    coord.Y = (SHORT) y;  /* Y-coordinate */
-#elif (defined(__WIN_PLATFORM_32) && defined(__CYGWIN_ENV)) || defined(__UNIX_PLATFORM)
-    printf("%s[%u;%uf", ESC, y, x);  /* "\033[{y};{x}f" */
-#endif  /* __WIN_PLATFORM_32 && ! __CYGWIN_ENV */
+#ifdef __HAVE_WINDOWS_API  /* For Windows */
+    HANDLE handler = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (handler != INVALID_HANDLE_VALUE) {
+        COORD coord;
+        coord.X = (SHORT)x;
+        coord.Y = (SHORT)y;
+        SetConsoleCursorPosition(handler, coord);
+    }
+#else
+    printf("%s[%u;%uH", ESC, y, x);  /* Use the correct ANSI escape sequence */
+#endif  /* __HAVE_WINDOWS_API */
 }
 
 /**
@@ -515,7 +511,7 @@ void clrscr(void) {
 #if defined(__WIN_PLATFORM_32) && ! defined(__CYGWIN_ENV)
     system("cls");  /* Simply use the built-in command */
 /* Windows system but using Cygwin or MSYS2 environment, or Unix-like systems */
-#elif (defined(__WIN_PLATFORM_32) && defined(__CYGWIN_ENV)) || defined(__UNIX_PLATFORM)
+#else
     printf("%s[0m%s[1J%s[H", ESC, ESC, ESC);
 #endif  /* __WIN_PLATFORM_32 && ! __CYGWIN_ENV */
 }
@@ -570,7 +566,7 @@ void rstscr(void) {
 #if defined(__WIN_PLATFORM_32) && ! defined(__CYGWIN_ENV)
     system("cls");
 /* Unix-like systems (including the MSYS2 and Cygwin environment) */
-#elif (defined(__WIN_PLATFORM_32) && defined(__CYGWIN_ENV)) || defined(__UNIX_PLATFORM)
+#else
     printf("%s[0m%sc", ESC, ESC);  /* "\033[0m\033c" */
 #endif  /* __WIN_PLATFORM_32 && ! __CYGWIN_ENV */
 }
