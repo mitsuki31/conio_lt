@@ -49,7 +49,7 @@
  *
  * @author    Ryuu Mitsuki
  * @version   0.3.0-beta
- * @date      26 Jan 2024
+ * @date      30 Nov 2024
  * @copyright &copy; 2023 - 2024 Ryuu Mitsuki.
  *            Licensed under the GNU General Public License 3.0.
  */
@@ -99,17 +99,49 @@
 #  endif  /* __CYGWIN__ */
 #endif  /* _WIN32 || __WIN32__ */
 
-/* Warn users if they are using pre-C99 compilers or specific compilers
- * that may not be fully compatible with this header file.
+/**
+ * @brief Conditional macro to indicate support for the `<stdint.h>` library.
  *
- * The macro __STDC__ is defined by C compilers to indicate conformance to
- * the ANSI/ISO C standard. However, note that __STDC__ is also defined in
- * Borland C++ environments but not in Microsoft Visual C++. For Microsoft
- * Visual C++, the _MSC_VER macro is used to indicate the compiler version.
+ * This macro serves to signify the availability of the `<stdint.h>` library,
+ * which provides fixed-width integer types. It helps determine whether
+ * code in this header file can leverage these types.
+ *
+ * The macro is conditionally defined based on the following criteria:
+ *
+ * For C compilers
+ * ---------------
+ *   - If the compiler conformance to the C94 standard or later
+ *     (if `__STDC_VERSION__` is defined and greater than or equal to 199409L).
+ *   - For **Borland C++** compilers, if the version is 5.0 or later.
+ *   - For **Microsoft Visual C++** compilers, if the version is **Visual C++ 2010**
+ *     (version 1600) or later.
+ *
+ * For C++ compilers
+ * -----------------
+ *   - If the C++ standard (`__cplusplus`) is greater than or equal to C++11 (201103L).
+ *
+ * @remarks This macro acts as an indicator of the availability of the `stdint.h` library.
+ *          During compilation, a warning is issued if the compiler version is deemed outdated.
+ *          Notably, the `__STDC__` macro is defined by C compilers to denote conformance to
+ *          the ANSI/ISO C standard. However, this macro is also defined in **Borland C++**
+ *          environments but not in **Microsoft Visual C++**. For **Microsoft Visual C++**, the
+ *          `_MSC_VER` macro indicates the compiler version. The `__STDC_VERSION__` macro
+ *          represents the compiler version as a `long` integer; pre-C94 compilers may not
+ *          define `__STDC_VERSION__`, but they define `__STDC__`. In **Borland C++**, the
+ *          `__BORLANDC__` macro indicates the compiler version.
+ *
+ * @attention If the compiler is considered outdated (e.g., pre-C94), a warning is displayed.
+ *            In some cases, compilation may fail or usage of this header file might be restricted,
+ *            as certain fixed-width integer types may be missing. In such situations,
+ *            it is advisable to define the `_CONIO_LT_DEF_STDINT` macro, enabling a minor
+ *            replacement for the `stdint.h` library. Note that this replacement is designed
+ *            to make the header file functional even without full `stdint.h` library support.
+ *
+ * @{
  */
 #if ! defined(__cplusplus)  /* For C compilers */
 # if ((defined(__STDC_VERSION__) && __STDC_VERSION__ <= 199409L /* <= C94 */)   \
-        || (defined(__STDC__) && ! defined(__STDC_VERSION__) /* Pre-C99 */)     \
+        || (defined(__STDC__) && ! defined(__STDC_VERSION__) /* Pre-C94 */)     \
         || (defined(__BORLANDC__) && __BORLANDC__ < 0x520 /* < 5.0 */)          \
         || (defined(_MSC_VER) && _MSC_VER < 1600 /* < Visual C++ 2010 */))
 #warning \
@@ -127,6 +159,7 @@
 #  define __HAVE_STDINT_LIB
 # endif  /* C++ */
 #endif  /* Warn for pre-C99 & pre-C++11 compilers */
+/** @} */
 
 /* Import the 'stdint.h' header if the compiler have it */
 #if defined(__HAVE_STDINT_LIB) || defined(HAVE_STDINT_H)
@@ -134,8 +167,8 @@
 #endif  /* __HAVE_STDINT_LIB || HAVE_STDINT_H */
 
 
-#if ! (defined(__HAVE_STDINT_LIB) || defined(HAVE_STDINT_H)) && defined(_CONIO_LT_DEF_STDINT)
-/**
+/** @{ */
+/*
  * This section provides a minimal replacement for the `stdint.h` header,
  * defining fixed-width integer types for environments where the standard
  * header may not be available, especially in Windows systems. It includes
@@ -156,54 +189,54 @@
  * This is because the `stdint.h` header was introduced in C99 standard library.
  * You can visit to <https://en.m.wikibooks.org/wiki/C_Programming/stdint.h>,
  * if you want to read more further about `stdint.h` header file.
- * @{
  */
+#if ! (defined(__HAVE_STDINT_LIB) || defined(HAVE_STDINT_H)) && defined(_CONIO_LT_DEF_STDINT)
 /*:: Minor replacement for `stdint.h` header file ::*/
 /*:: -------------------------------------------- ::*/
 /* Fixed-width integer types definition */
-typedef signed char             int8_t;    /* 8-bit */
-typedef unsigned char           uint8_t;   /* U 8-bit */
-typedef signed short            int16_t;   /* 16-bit */
-typedef unsigned short          uint16_t;  /* U 16-bit */
-typedef signed int              int32_t;   /* 32-bit */
-typedef unsigned int            uint32_t;  /* U 32-bit */
+typedef signed char             int8_t;    /**< 8-bit           */
+typedef unsigned char           uint8_t;   /**< unsigned 8-bit  */
+typedef signed short            int16_t;   /**< 16-bit          */
+typedef unsigned short          uint16_t;  /**< unsigned 16-bit */
+typedef signed int              int32_t;   /**< 32-bit          */
+typedef unsigned int            uint32_t;  /**< unsigned 32-bit */
 /* 64-bit fixed-width integers are not needed here */
 /*:: -------------------------------------------- ::*/
-/** @} */
 #endif  /* ! (__HAVE_STDINT_LIB || HAVE_STDINT_H) && _CONIO_LT_DEF_STDINT */
+/** @} */
 
 /* Handle platform-specific headers for console I/O using specific preprocessor macros */
 #if defined(__WIN_PLATFORM_32) || defined(__MINGWC_32)
 # include <windows.h>  /* Windows-specific header for terminal I/O control */
-# define __HAVE_WINDOWS_API
+# define __HAVE_WINDOWS_API  /**< Indicates that current environment is Windows and have Windows API (`<windows.h>`) */
 
 /*:: Minor replacement for `unistd.h` header file ::*/
 /*:: -------------------------------------------- ::*/
 /* File number of file descriptors (stdin, stdout, stderr) */
 # ifndef STDIN_FILENO
-#  define STDIN_FILENO    0
+#  define STDIN_FILENO    0  /**< File number of standard input */
 # endif  /* STDIN_FILENO */
 
 # ifndef STDOUT_FILENO
-#  define STDOUT_FILENO   1
+#  define STDOUT_FILENO   1  /**< File number of standard output */
 # endif  /* STDOUT_FILENO */
 
 # ifndef STDERR_FILENO
-#  define STDERR_FILENO   2
+#  define STDERR_FILENO   2  /**< File number of standard error */
 # endif  /* STDERR_FILENO */
 
 /* File permissions */
 # ifndef R_OK
-#  define R_OK  4  /* Read */
+#  define R_OK  4  /**< Read */
 # endif  /* R_OK */
 # ifndef W_OK
-#  define W_OK  2  /* Write */
+#  define W_OK  2  /**< Write */
 # endif  /* W_OK */
-/* #  define X_OK  1 */  /* Execute - Unsupported in Windows file system, use R_OK instead */
+/* #  define X_OK  1 */  /* Execute - Unsupported in Windows file system, use `R_OK` instead */
 # ifndef F_OK
-#  define F_OK  0  /* Exists (as regular file) */
+#  define F_OK  0  /**< Exists (as regular file) */
 # endif  /* F_OK */
-#else
+#else  /* For Unix-like systems */
 /* On Windows environment, these headers were not provided by MinGW neither by Borland C++ compiler.
  * Because they are only designed for Unix-like (POSIX) environment and not part of standard C libraries.
  */
@@ -221,10 +254,11 @@ typedef unsigned int            uint32_t;  /* U 32-bit */
  * @see   __getch(GETCH_ECHO)
  */
 typedef enum {
-    GETCH_NO_ECHO,   /**< Represents the option to read a character without echoing it to the terminal. */
-    GETCH_USE_ECHO   /**< Represents the option to read a character with echoing it to the terminal. */
+    GETCH_NO_ECHO,   /**< Represents the option to read a character without send buffer to the terminal. */
+    GETCH_USE_ECHO   /**< Represents the option to read a character with send buffer to the terminal. */
 } GETCH_ECHO;
 
+/** @{ */
 /**
  * @brief Represents the cursor position type.
  *
@@ -235,14 +269,13 @@ typedef enum {
  * On Unix-like platforms or when Windows API is not available, `cpos_t` is
  * equivalent to `int16_t` (`signed short`). When the Windows API is available,
  * `cpos_t` is equivalent to `SHORT`.
- * @{
  */
 typedef 
-#if defined(__UNIX_PLATFORM) || ! defined(__HAVE_WINDOWS_API)
-/* - */ int16_t
-#elif defined(__HAVE_WINDOWS_API)
+#ifdef __HAVE_WINDOWS_API
 /* - */ SHORT
-#endif  /* __UNIX_PLATFORM || ! __HAVE_WINDOWS_API */
+#else
+/* - */ int16_t
+#endif  /* __HAVE_WINDOWS_API */
 /* ---------- */ cpos_t;
 /** @} */
 
@@ -413,7 +446,7 @@ static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
  * gotoxy(0, 0);
  * ```
  *
- * @note On Unix-like systems, this function uses the ANSI escape sequence `"\033[{y};{x}f"`
+ * @note On Unix-like systems, this function uses the ANSI escape sequence `"\033[{y};{x}H"`
  *       to move the cursor to the specified position. It supports both **MSYS2** and
  *       **Cygwin** environments. However, the behavior may vary across different terminals.
  *
@@ -669,13 +702,13 @@ cpos_t wherey(void) {
  * wherexy(&cur_x, &cur_y);
  * ```
  *
- * @param[in,out] x  Pointer to the variable where the X-coordinate will be stored.
- * @param[in,out] y  Pointer to the variable where the Y-coordinate will be stored.
+ * @param[in,out] px  Pointer to the variable where the X-coordinate will be stored.
+ * @param[in,out] py  Pointer to the variable where the Y-coordinate will be stored.
  *
  * @since 0.2.0.
  */
-void wherexy(cpos_t* x, cpos_t* y) {
-    __whereis_xy(x, y);
+void wherexy(cpos_t* px, cpos_t* py) {
+    __whereis_xy(px, py);
 }
 
 /**
@@ -723,7 +756,7 @@ void gotox(cpos_t const x) {
  * ```c
  * gotoxy(wherex(), y);
  * ```
- * 
+ *
  * It provides flexibility in cursor positioning by allowing the user to set the
  * Y-coordinate while keeping the current X-coordinate unchanged.
  *
