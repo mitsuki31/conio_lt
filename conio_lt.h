@@ -455,20 +455,17 @@ static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
  * @since 0.1.0
  */
 void gotoxy(cpos_t const x, cpos_t const y) {
-/* Windows system but not using the Cygwin neither MSYS2 environment,
- * which means it uses the Command Prompt or PowerShell
- */
-#if defined(__WIN_PLATFORM_32) && ! defined(__CYGWIN_ENV)
-    /* Declare a new COORD variable with desired coordinates */
-    COORD coord;
-    /* These two must be explicitly converted to SHORT
-     * More details, visit <https://learn.microsoft.com/en-us/windows/console/coord-str>
-     */
-    coord.X = (SHORT) x;  /* X-coordinate */
-    coord.Y = (SHORT) y;  /* Y-coordinate */
-#elif (defined(__WIN_PLATFORM_32) && defined(__CYGWIN_ENV)) || defined(__UNIX_PLATFORM)
-    printf("%s[%u;%uf", ESC, y, x);  /* "\033[{y};{x}f" */
-#endif  /* __WIN_PLATFORM_32 && ! __CYGWIN_ENV */
+#ifdef __HAVE_WINDOWS_API  /* For Windows */
+    HANDLE handler = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (handler != INVALID_HANDLE_VALUE) {
+        COORD coord;
+        coord.X = (SHORT)x;
+        coord.Y = (SHORT)y;
+        SetConsoleCursorPosition(handler, coord);
+    }
+#else
+    printf("%s[%u;%uH", ESC, y, x);  /* Use the correct ANSI escape sequence */
+#endif
 }
 
 /**
