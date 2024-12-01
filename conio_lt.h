@@ -49,7 +49,7 @@
  *
  * @author    Ryuu Mitsuki
  * @version   0.3.0-beta
- * @date      30 Nov 2024
+ * @date      01 Des 2024
  * @copyright &copy; 2023 - 2024 Ryuu Mitsuki.
  *            Licensed under the GNU General Public License 3.0.
  */
@@ -316,19 +316,16 @@ extern "C" {
 static int __getch(GETCH_ECHO const __echo) {
     int __c;
 
-#if defined(__UNIX_PLATFORM) || defined(__UNIX_PLATFORM_ANDRO)
-    /* Internal '__getch' function implementation for Unix systems only */
+#if defined(__UNIX_PLATFORM) || ! defined(__HAVE_WINDOWS_API)
+    /* Internal '__getch' function implementation for Unix systems and unimplemented Windows API */
     struct termios __oldterm, __newterm;
 
     tcgetattr(STDIN_FILENO, &__oldterm);
     __newterm = __oldterm;  /* Copy the original terminal setting */
     __newterm.c_lflag &= ~ICANON;
 
-    if (__echo) {
-        __newterm.c_lflag &= ECHO;   /* With echo */
-    } else {
-        __newterm.c_lflag &= ~ECHO;  /* Without echo */
-    }
+    if (__echo) __newterm.c_lflag &= ECHO;   /* With echo */
+    else __newterm.c_lflag &= ~ECHO;  /* Without echo */
 
     tcsetattr(STDIN_FILENO, TCSANOW, &__newterm);  /* Apply the customized terminal setting */
     __c = getchar();                               /* Retrieve the character */
@@ -340,18 +337,21 @@ static int __getch(GETCH_ECHO const __echo) {
     GetConsoleMode(handler, &console_mode);
     original_mode = console_mode;  /* Copy the original console setting */
 
-    /* Set the console mode to include line input */
-    console_mode &= ENABLE_LINE_INPUT;
-    if (__echo) {
-        /* If echoing is required, include echo input in the console mode */
-        console_mode &= ENABLE_ECHO_INPUT;
-    } else {
-        /* If echoing is not required, exclude echo input from the console mode */
-        console_mode &= ~ENABLE_ECHO_INPUT;
-    }
+    /* Set the console mode to disable line input and optionally disable echo input */
+    console_mode &= ~ENABLE_LINE_INPUT;
+    /* If echoing is required, include echo input in the console mode */
+    if (__echo) console_mode &= ENABLE_ECHO_INPUT;
+    /* If echoing is not required, exclude echo input from the console mode */
+    else console_mode &= ~ENABLE_ECHO_INPUT;
+
     /* Apply the customized console setting */
     SetConsoleMode(handler, console_mode);
-    __c = getchar();  /* Retrieve the input character */
+
+    /* Read a single character from the console input buffer */
+    DWORD dwRead = 0;
+    char buffer[1];
+    ReadConsole(handler, buffer, 1, &dwRead, NULL);
+    __c = buffer[0];  /* Extract the retrieved character */
 
     /* Restore original console mode */
     SetConsoleMode(handler, original_mode);
