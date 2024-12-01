@@ -390,7 +390,7 @@ static int __getch(GETCH_ECHO const __echo) {
 static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
     cpos_t x = 0, y = 0;  /* Variables to hold the coordinates */
 
-#if defined(__WIN_PLATFORM_32) || defined(__MINGWC_32)
+#ifdef __HAVE_WINDOWS_API
     HANDLE handler = GetStdHandle(STD_OUTPUT_HANDLE);
     CONSOLE_SCREEN_BUFFER_INFO csbi;
 
@@ -401,16 +401,15 @@ static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
         x = csbi.dwCursorPosition.X;
         y = csbi.dwCursorPosition.Y;
     }
-#else  /* Body function for Unix systems */
+#else  /* Body function for Unix-like systems */
     printf("%s[6n", ESC);
 
     /* If the input character neither equal with '0x1B' (escape character)
      * nor '0x5B' ('['), then return (leaving the '__x' and '__y' references
      * unmodified) because it was unable to get current position of cursor.
      */
-    if (__getch(GETCH_NO_ECHO) != 0x1B ^ __getch(GETCH_NO_ECHO) != 0x5B) {
-        return;
-    }
+    if ((__getch(GETCH_NO_ECHO) != 0x1B)
+        ^ (__getch(GETCH_NO_ECHO) != 0x5B)) return;
 
     int temp;
     while ((temp = __getch(GETCH_NO_ECHO)) != 0x3B /* ';' */) {
