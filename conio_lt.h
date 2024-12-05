@@ -766,6 +766,110 @@ void gotoy(cpos_t const y) {
     gotoxy(wherex(), y);
 }
 
+
+/**
+ * @brief Clears the current line in the terminal.
+ *
+ * This function clears the entire line where the cursor is currently positioned.
+ * It is a cross-platform implementation that uses Windows API on Windows systems and
+ * ANSI escape sequences on Unix-like systems.
+ *
+ * On Unix-like systems, this function uses ANSI escape sequences to manipulate the terminal.
+ * The following sequences are used:
+ * 
+ * | Escape Sequence | Description                                 |
+ * |-----------------|---------------------------------------------|
+ * | `\033[2K`       | Clears the entire line                     |
+ *
+ * - `\033` - is the escape character (ASCII code 27, see @ref ESC) used to start an escape sequence.
+ * - `[2K` - is the control sequence for clearing the entire line.
+ * - `\r` - moves the cursor back to the beginning of the line.
+ *
+ * @note  For Windows systems, the function uses [`SetConsoleCursorPosition`](https://learn.microsoft.com/en-us/windows/console/setconsolecursorposition)
+ *        and [`FillConsoleOutputCharacter`](https://learn.microsoft.com/en-us/windows/console/fillconsoleoutputcharacter)
+ *        to achieve the same functionality.
+ * 
+ * @pre   Ensure the console supports ANSI escape sequences for Unix-specific implementation.
+ *
+ * @since 0.3.0
+ * @see   dellines(cpos_t, cpos_t)
+ */
+void delline(void) {
+/* Windows-specific implementation */
+#ifdef __HAVE_WINDOWS_API
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    DWORD dw;
+
+    if (GetConsoleScreenBufferInfo(hConsole, &csbi)) {
+        COORD lineStart = { 0, csbi.dwCursorPosition.Y };  /* Start of the current line */
+        FillConsoleOutputCharacter(hConsole, ' ', csbi.dwSize.X, lineStart, &dw);  /* Clear the line */
+        SetConsoleCursorPosition(hConsole, lineStart);  /* Reset cursor to line start */
+    }
+#else
+    /* Unix-like systems using ANSI escape sequences */
+    printf("%s[2K\r", ESC);  /* Clear the line and reset cursor to the beginning */
+#endif  /* __HAVE_WINDOWS_API */
+    fflush(stdout);          /* Ensure immediate display */
+}
+
+/**
+ * @brief Clears multiple lines in the terminal.
+ *
+ * This function takes a range of line numbers (@p from and @p to) and clears
+ * all lines in that range. The range is inclusive, meaning that both the
+ * line at @p from and @p to are cleared. If @p from is greater than @p to,
+ * the range is swapped internally to ensure that the correct lines are cleared.
+ *
+ * The function first saves the current Y-coordinate of the cursor position
+ * and then moves the cursor to the first line in the range ( @p from ). It then
+ * iterates through the range and clears each line by calling @ref delline().
+ * After clearing the lines, the function resets the Y-coordinate of the cursor
+ * to the original position.
+ *
+ * @note
+ * This function will behave the same as @ref clrscr() if @p from set to 0 and @p to
+ * set to the returned value of @ref wherey(). However the cursor position will not be reset
+ * and will remain at the original position, unlike @ref clrscr() where the cursor position
+ * is reset to the top-left corner of the screen.
+ *
+ * @param[in] from  The starting line number to clear.
+ * @param[in] to    The ending line number to clear.
+ *
+ * @pre   Ensure the console supports ANSI escape sequences for Unix-specific implementation.
+ *
+ * @since 0.3.0
+ * @see   delline(void)
+ * @see   gotoy(cpos_t)
+ */
+void dellines(cpos_t from, cpos_t to) {
+    /* Ensure valid range */
+    if ((from < 0) || (to < 0)) {
+        fprintf(stderr,
+            "conio_lt: dellines: Position out of range (from: %d, to: %d)\n", from, to);
+        return;
+    }
+
+    /* Swap `from` and `to` if `from` is greater than `to` with XOR logic */
+    if (from > to) {
+        from ^= to; to ^= from; from ^= to;
+    }
+
+    /* Save the current Y-coordinate of cursor position */
+    cpos_t orig_y = wherey();
+    gotoy(from);  /* Move first the cursor to `from` line */
+
+    cpos_t i;
+    for (i = from; i <= to; i++) {
+        gotoy(i);  /* Move the cursor to `i` line */
+        /* Clear the current line and move the cursor to the start of the line */
+        delline();
+    }
+    /* Reset the Y-coordinate of cursor after clearing lines */
+    gotoy(orig_y);
+}
+
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif  /* __cplusplus */
