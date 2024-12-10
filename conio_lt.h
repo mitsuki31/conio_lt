@@ -49,7 +49,7 @@
  *
  * @author    Ryuu Mitsuki
  * @version   0.3.0-beta
- * @date      01 Des 2024
+ * @date      05 Des 2024
  * @copyright &copy; 2023 - 2024 Ryuu Mitsuki.
  *            Licensed under the GNU General Public License 3.0.
  */
@@ -205,13 +205,6 @@ typedef unsigned int            uint32_t;  /**< unsigned 32-bit */
 #endif  /* ! (__HAVE_STDINT_LIB || HAVE_STDINT_H) && _CONIO_LT_DEF_STDINT */
 /** @} */
 
-/* Handle platform-specific headers for console I/O using specific preprocessor macros */
-#if defined(__WIN_PLATFORM_32) || defined(__MINGWC_32)
-# include <windows.h>  /* Windows-specific header for terminal I/O control */
-# define __HAVE_WINDOWS_API  /**< Indicates that current environment is Windows and have Windows API (`<windows.h>`) */
-
-/*:: Minor replacement for `unistd.h` header file ::*/
-/*:: -------------------------------------------- ::*/
 /* File number of file descriptors (stdin, stdout, stderr) */
 # ifndef STDIN_FILENO
 #  define STDIN_FILENO    0  /**< File number of standard input */
@@ -224,6 +217,11 @@ typedef unsigned int            uint32_t;  /**< unsigned 32-bit */
 # ifndef STDERR_FILENO
 #  define STDERR_FILENO   2  /**< File number of standard error */
 # endif  /* STDERR_FILENO */
+
+/* Handle platform-specific headers for console I/O using specific preprocessor macros */
+#if defined(__WIN_PLATFORM_32) || defined(__MINGWC_32)
+# include <windows.h>  /* Windows-specific header for terminal I/O control */
+# define __HAVE_WINDOWS_API  /**< Indicates that current environment is Windows and have Windows API (`<windows.h>`) */
 
 /* File permissions */
 # ifndef R_OK
@@ -373,8 +371,8 @@ static int __getch(GETCH_ECHO const __echo) {
  *   - `wherexy(cpos_t*, cpos_t*)` - Retrieves the current both coordinates of the cursor position
  *                                   stored in provided pointer variables
  *
- * @param[in,out] __x  Pointer to a variable where the X-coordinate of the cursor will be stored.
- * @param[in,out] __y  Pointer to a variable where the Y-coordinate of the cursor will be stored.
+ * @param[in,out] __px  Pointer to a variable where the X-coordinate of the cursor will be stored.
+ * @param[in,out] __py  Pointer to a variable where the Y-coordinate of the cursor will be stored.
  *
  * @note For Unix-like systems, this function sends the ANSI escape sequence `"\033[6n"`
  *       to the terminal and parses the response to obtain cursor coordinates. On Windows,
@@ -387,7 +385,7 @@ static int __getch(GETCH_ECHO const __echo) {
  * @since 0.1.0
  * @see   wherexy(cpos_t*, cpos_t*)
  */
-static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
+static void __whereis_xy(cpos_t* __px, cpos_t* __py) {
     cpos_t x = 0, y = 0;  /* Variables to hold the coordinates */
 
 #ifdef __HAVE_WINDOWS_API
@@ -405,7 +403,7 @@ static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
     printf("%s[6n", ESC);
 
     /* If the input character neither equal with '0x1B' (escape character)
-     * nor '0x5B' ('['), then return (leaving the '__x' and '__y' references
+     * nor '0x5B' ('['), then return (leaving the '__px' and '__py' references
      * unmodified) because it was unable to get current position of cursor.
      */
     if ((__getch(GETCH_NO_ECHO) != 0x1B)
@@ -421,8 +419,8 @@ static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
     }
 #endif  /* __HAVE_WINDOWS_API */
     /* Store and assign the cursor position */
-    *__x = x;
-    *__y = y;
+    *__px = x;
+    *__py = y;
 }
 
 
