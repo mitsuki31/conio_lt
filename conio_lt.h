@@ -509,11 +509,17 @@ void clrscr(void) {
  * which means it uses the Command Prompt or PowerShell
  */
 #if defined(__WIN_PLATFORM_32) && ! defined(__CYGWIN_ENV)
-    /* TODO: Refactor this to makes clrscr() function for Windows system
-              is not using the `cls` command instead clear the lines from the
-              cursor position to the start of the screen
-     */
-    system("cls");  /* Simply use the built-in command */
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hConsole != INVALID_HANDLE_VALUE) {
+        CONSOLE_SCREEN_BUFFER_INFO csbi;
+        if (GetConsoleScreenBufferInfo(hConsole, &csbi)) {
+            COORD lineStart = { 0, 0 };  /* Start of the current line */
+            DWORD dw;
+
+            FillConsoleOutputCharacter(hConsole, ' ', csbi.dwSize.X * csbi.dwSize.Y, lineStart, &dw);
+            SetConsoleCursorPosition(hConsole, lineStart);
+        }
+    }
 /* Windows system but using Cygwin or MSYS2 environment, or Unix-like systems */
 #else
     printf("%s[0m%s[1J%s[H", ESC, ESC, ESC);
