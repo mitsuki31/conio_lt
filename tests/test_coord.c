@@ -1,3 +1,9 @@
+/**
+ * @file test_coord.c
+ *
+ * @brief Test for `gotoxy`, `wherex`, `wherey` and `wherexy` functions.
+ */
+
 #include <stdio.h>
 #include "../conio_lt.h"
 
@@ -22,5 +28,7 @@ int main(void) {
     /* Get current position of the cursor, then print to the console */
     wherexy((cpos_t*) &x, (cpos_t*) &y);  /* Need conversion */
     printf("X:%d Y:%d\n", x, y);
+
+    printf("\n[Test Passed]\n");
     return 0;
 }

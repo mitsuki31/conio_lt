@@ -20,15 +20,20 @@
  * @file conio_lt.h
  *
  * @brief `conio_lt` is a lightweight adaptation of the `<conio.h>` library,
- *        designed specifically for Unix-like systems and Termux on Android.
+ *        designed specifically for Unix-like systems, with limited compatibility
+ *        for Windows environments, and support for GCC and Clang compilers.
  *
- * This library aims to bring console manipulation functionalities to Unix-like
- * environments, providing a subset of features found in `<conio.h>`. It is tailored
- * for Unix-like systems, but in Windows environments it might behave differently
- * for several functions. For example, @ref clrscr() and @ref rstscr() may not have
- * the same effect on Windows as they do on Unix-like systems, they both utilize
- * the `cls` command on Windows. In this case, those functions will unintentionally
- * clear and reset the terminal screen.
+ * This library provides a subset of console manipulation functionalities found
+ * in the traditional `<conio.h>`, tailored to work in Unix-like systems such as
+ * Linux, macOS, and Termux on Android. It is also designed to be compatible with
+ * GCC and Clang compilers, providing an efficient and cross-platform solution.
+ * Unlike the full `conio.h`, `conio_lt` is focused on essential terminal functions,
+ * excluding more advanced features such as `window()`, making it lightweight and
+ * well-suited for terminal-based applications.
+ *
+ * The goal of the `conio_lt.h` library is to provide a focused, efficient, and
+ * cross-platform subset of console-based features suitable for terminal-based
+ * applications, while ensuring compatibility with GCC and Clang compilers.
  *
  * Available APIs
  * --------------
@@ -43,6 +48,9 @@
  *  - gotoxy(cpos_t, cpos_t)
  *  - putch(int)
  *  - ungetch(int)
+ *  - cputs(const char*)
+ *  - cgets(char*)
+ *  - cscanf(const char*, ...)
  *  - wherex()
  *  - wherey()
  *  - wherexy(cpos_t*, cpos_t*)
@@ -64,6 +72,7 @@
 
 /* C standard I/O header */
 #include <stdio.h>
+#include <stdarg.h>
 
 #if defined(unix) || defined(__unix__) || defined(__unix)
 #  define __UNIX_PLATFORM
@@ -876,6 +885,92 @@ void dellines(cpos_t from, cpos_t to) {
     }
     /* Reset the Y-coordinate of cursor after clearing lines */
     gotoy(orig_y);
+}
+
+
+/**
+ * @brief Outputs a string to the standard output and ensures immediate display.
+ *
+ * This function takes a string as input and writes it to the standard output.
+ * After writing the string, it flushes the output buffer to ensure that the
+ * string is displayed immediately. If the input string is `NULL` or if there
+ * is an error during writing, the function returns `NULL`.
+ *
+ * @param[in] str  The string to be written to the standard output.
+ * @return         Returns the input string on success, or NULL on failure.
+ *
+ * @pre     The input string must not be `NULL` before calling this function.
+ *
+ * @since   0.3.0
+ */
+const char* cputs(char* const str) {
+    if (!str) return NULL;                      /* Handle null input */
+    if (fputs(str, stdout) == EOF) return NULL; /* Print string and check for errors */
+    fflush(stdout);                             /* Ensure the output is flushed immediately */
+    return str;
+}
+
+/**
+ * @brief Reads a string from the standard input into the provided buffer.
+ *
+ * This function reads a line of text from the standard input and stores it in
+ * the provided buffer. The buffer must have its first byte set to the maximum
+ * number of characters (including the null terminator) that can be read.
+ * The function reads at most this number minus one characters, leaving space
+ * for the null terminator. If a newline character is read, it is replaced with
+ * a null terminator.
+ *
+ * @param[in,out] buffer A pointer to the buffer where the input string will
+ *                       be stored. The first byte should be set to the maximum
+ *                       length of the input string (including null terminator).
+ * @return               A pointer to the buffer containing the input string, or `NULL` if the
+ *                       buffer is `NULL` or if an error occurs while reading input.
+ *
+ * @warning     Ensure that the buffer is not `NULL` and that its first byte is
+ *              correctly set before calling this function.
+ *
+ * @since       0.3.0
+ */
+char* cgets(char* buffer) {
+    if (!buffer) return NULL;  /* Handle null buffer */
+    int maxLength = (unsigned char)buffer[0];  /* Maximum length is stored in the first byte */
+    if (fgets(buffer, maxLength, stdin) == NULL) return NULL;
+    /* Remove trailing newline if present */
+    char* newline = buffer + 1;
+    while (*newline && *newline != '\n') newline++;
+    *newline = '\0';  /* Null-terminate the string */
+    return buffer;
+}
+
+/**
+ * @brief Reads input from the standard input according to the given format.
+ *
+ * This function reads formatted input from the standard input and assigns it
+ * to the variables in the argument list. The function returns the number of
+ * input items assigned, which may be less than the number of arguments provided
+ * if the format string is not fully satisfied.
+ *
+ * @param[in] fmt   A pointer to a format string that specifies how the input
+ *                  should be interpreted.
+ * @param[in] ...   A variable number of arguments to which the input values will
+ *                  be assigned.
+ * @return          The number of input items assigned, which may be less than the number
+ *                  of arguments provided if the format string is not fully satisfied.
+ *
+ * @warning     Ensure that the format string is well-formed and the arguments are
+ *              correct, or the behavior is undefined.
+ *
+ * @since       0.3.0
+ */
+int cscanf(char* const fmt, ...) {
+    va_list args;
+    va_start(args, fmt);  /* Initialize variable argument list */
+    int result = vscanf(fmt, args);  /* Use `vscanf` for variable arguments */
+    /* Exclude the last character (newline) from input buffer */
+    int ch;
+    while ((ch = getchar()) != '\n' && ch != EOF);
+    va_end(args);  /* Clean up variable argument list */
+    return result;
 }
 
 

@@ -1,3 +1,9 @@
+/**
+ * @file test_clrscr.c
+ *
+ * @brief Test for `clrscr` and `rstscr` functions.
+ */
+
 #include <stdio.h>
 #include "../conio_lt.h"
 
@@ -9,7 +15,8 @@ int main(void) {
     printf("\n");
 
     /* Make the terminal screen dirty */
-    for (int i = 1; i <= 70; i++) {
+    int i;
+    for (i = 1; i <= 100; i++) {
         printf("%d\n", i);
     }
 
@@ -17,11 +24,13 @@ int main(void) {
     printf("clrscr: Press any key to clear the screen...");
     getch();
     clrscr();
+    printf("Try scroll the terminal screen upwards.\n");
 
     /* Clear and reset the terminal screen */
     printf("rstscr: Press any key to reset the screen...");
     getch();
     rstscr();
 
+    printf("\n[Test Passed]\n");
     return 0;
 }
