@@ -478,7 +478,8 @@ void gotoxy(cpos_t const x, cpos_t const y) {
  * On Unix-like systems, it uses ANSI escape sequences for clearing the screen
  * (including the **MSYS2** and **Cygwin** environment).
  *
- * On Unix-like systems, this function uses the following control sequences.
+ * On Windows systems, this function uses the Windows API `cls` command. On Unix-like
+ * systems, this function uses the following control sequences.
  *
  * | Control sequence | Description                                                            |
  * | ---------------- | ---------------------------------------------------------------------- |
@@ -491,8 +492,7 @@ void gotoxy(cpos_t const x, cpos_t const y) {
  *
  * @note
  * - On Unix-like systems, ANSI escape sequences are used. Some terminals may not
- *   support these sequences, affecting the clearing functionality. However on Windows,
- *   this function utilizes the Windows API `cls` command.
+ *   support these sequences, affecting the clearing functionality.
  * - This function does not prevent the screen from scrolling. If you want to reset
  *   entire the screen, use the @ref rstscr() instead.
  *
@@ -509,11 +509,17 @@ void clrscr(void) {
  * which means it uses the Command Prompt or PowerShell
  */
 #if defined(__WIN_PLATFORM_32) && ! defined(__CYGWIN_ENV)
-    /* TODO: Refactor this to makes clrscr() function for Windows system
-              is not using the `cls` command instead clear the lines from the
-              cursor position to the start of the screen
-     */
-    system("cls");  /* Simply use the built-in command */
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hConsole != INVALID_HANDLE_VALUE) {
+        CONSOLE_SCREEN_BUFFER_INFO csbi;
+        if (GetConsoleScreenBufferInfo(hConsole, &csbi)) {
+            COORD lineStart = { 0, 0 };  /* Start of the current line */
+            DWORD dw;
+
+            FillConsoleOutputCharacter(hConsole, ' ', csbi.dwSize.X * csbi.dwSize.Y, lineStart, &dw);
+            SetConsoleCursorPosition(hConsole, lineStart);
+        }
+    }
 /* Windows system but using Cygwin or MSYS2 environment, or Unix-like systems */
 #else
     printf("%s[0m%s[1J%s[H", ESC, ESC, ESC);
