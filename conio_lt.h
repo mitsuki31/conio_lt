@@ -24,18 +24,18 @@
  *
  * This library aims to bring console manipulation functionalities to Unix-like
  * environments, providing a subset of features found in `<conio.h>`. It is tailored
- * for Unix-like systems, and its usage on Windows is not guaranteed to behave as
- * expected. Users are advised to exercise caution when using this library on
- * non-Unix environments.
- *
- * @note If you intend to run Unix-like commands on a Windows system, consider using
- *       [MSYS2](https://msys2.org) to provide a Bash shell environment. Keep in mind
- *       this approach may not fully replicate Unix-like behaviors on Windows.
+ * for Unix-like systems, but in Windows environments it might behave differently
+ * for several functions. For example, @ref clrscr() and @ref rstscr() may not have
+ * the same effect on Windows as they do on Unix-like systems, they both utilize
+ * the `cls` command on Windows. In this case, those functions will unintentionally
+ * clear and reset the terminal screen.
  *
  * Available APIs
  * --------------
  *  - clrscr()
  *  - rstscr()
+ *  - delline()
+ *  - dellines(cpos_t, cpos_t)
  *  - getch()
  *  - getche()
  *  - gotox(cpos_t)
@@ -47,11 +47,11 @@
  *  - wherey()
  *  - wherexy(cpos_t*, cpos_t*)
  *
- * @author    Ryuu Mitsuki
+ * @author    Ryuu Mitsuki <dhefam31@gmail.com>
  * @version   0.3.0-beta
  * @date      05 Des 2024
  * @copyright &copy; 2023 - 2024 Ryuu Mitsuki.
- *            Licensed under the GNU General Public License 3.0.
+ *            Licensed under the GNU General Public License 3.0. All rights reserved.
  */
 
 #ifndef CONIO_LT_H_
@@ -485,14 +485,12 @@ void gotoxy(cpos_t const x, cpos_t const y) {
  * By combining these control sequences in a single `printf` statement,
  * the function achieves the effect of clearing the terminal screen.
  *
- * @note - On Unix-like systems, ANSI escape sequences are used. Some terminals may not
- *         support these sequences, affecting the clearing functionality.
- *       - The function's behavior may differ in environments like **Cygwin** or **MSYS2**
- *         on Windows, and users are encouraged to be aware of such variations. In such
- *         environments, the function will use the control sequences to clear the terminal
- *         screen instead of using the `"cls"` command.
- *       - This function does not prevent the screen from scrolling. If you want to reset
- *         entire the screen, use the @ref rstscr() instead.
+ * @note
+ * - On Unix-like systems, ANSI escape sequences are used. Some terminals may not
+ *   support these sequences, affecting the clearing functionality. However on Windows,
+ *   this function utilizes the Windows API `cls` command.
+ * - This function does not prevent the screen from scrolling. If you want to reset
+ *   entire the screen, use the @ref rstscr() instead.
  *
  * @attention This function relies on system-specific commands and escape sequences, and
  *            its behavior may not be consistent across all terminals or environments.
@@ -507,6 +505,10 @@ void clrscr(void) {
  * which means it uses the Command Prompt or PowerShell
  */
 #if defined(__WIN_PLATFORM_32) && ! defined(__CYGWIN_ENV)
+    /* TODO: Refactor this to makes clrscr() function for Windows system
+              is not using the `cls` command instead clear the lines from the
+              cursor position to the start of the screen
+     */
     system("cls");  /* Simply use the built-in command */
 /* Windows system but using Cygwin or MSYS2 environment, or Unix-like systems */
 #else
@@ -538,16 +540,14 @@ void clrscr(void) {
  * the function achieves the effect of resetting and clearing the terminal
  * screen.
  *
- * @note - On Unix-like systems, ANSI escape sequences are used. Some terminals may not
- *         support these sequences, affecting the clearing functionality.
- *       - The function's behavior may differ in environments like **Cygwin** or **MSYS2**
- *         on Windows, and users are encouraged to be aware of such variations. In such
- *         environments, the function will use the control sequences to reset the terminal
- *         screen instead of using the `"cls"` command.
- *       - This function prevents the screen from scrolling by clearing the entire screen.
- *         If you only want to clear the screen without preventing scrolling and resetting,
- *         consider using the @ref clrscr() function. But in Windows systems, both
- *         functions will behave the same due to use of `"cls"` command in both functions.
+ * @note
+ * - On Unix-like systems, ANSI escape sequences are used. Some terminals may not
+ *   support these sequences, affecting the clearing functionality. However on Windows,
+ *   this function utilizes the Windows API `cls` command.
+ * - This function prevents the screen from scrolling by clearing the entire screen.
+ *   If you only want to clear the screen without preventing scrolling and resetting,
+ *   consider using the @ref clrscr() function. But in Windows systems, both
+ *   functions will behave the same due to use of `"cls"` command in both functions.
  *
  * @attention This function relies on system-specific commands and escape sequences, and
  *            its behavior may not be consistent across all terminals or environments.
@@ -568,6 +568,7 @@ void rstscr(void) {
     printf("%s[0m%sc", ESC, ESC);  /* "\033[0m\033c" */
 #endif  /* __WIN_PLATFORM_32 && ! __CYGWIN_ENV */
 }
+
 
 /**
  * @brief Pushes a character back onto the input stream.
@@ -774,10 +775,10 @@ void gotoy(cpos_t const y) {
  *
  * On Unix-like systems, this function uses ANSI escape sequences to manipulate the terminal.
  * The following sequences are used:
- * 
+ *
  * | Escape Sequence | Description                                 |
  * |-----------------|---------------------------------------------|
- * | `\033[2K`       | Clears the entire line                     |
+ * | `\033[2K`       | Clears the entire line                      |
  *
  * - `\033` - is the escape character (ASCII code 27, see @ref ESC) used to start an escape sequence.
  * - `[2K` - is the control sequence for clearing the entire line.
@@ -786,7 +787,7 @@ void gotoy(cpos_t const y) {
  * @note  For Windows systems, the function uses [`SetConsoleCursorPosition`](https://learn.microsoft.com/en-us/windows/console/setconsolecursorposition)
  *        and [`FillConsoleOutputCharacter`](https://learn.microsoft.com/en-us/windows/console/fillconsoleoutputcharacter)
  *        to achieve the same functionality.
- * 
+ *
  * @pre   Ensure the console supports ANSI escape sequences for Unix-specific implementation.
  *
  * @since 0.3.0
