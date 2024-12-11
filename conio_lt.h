@@ -478,7 +478,8 @@ void gotoxy(cpos_t const x, cpos_t const y) {
  * On Unix-like systems, it uses ANSI escape sequences for clearing the screen
  * (including the **MSYS2** and **Cygwin** environment).
  *
- * On Unix-like systems, this function uses the following control sequences.
+ * On Windows systems, this function uses the Windows API `cls` command. On Unix-like
+ * systems, this function uses the following control sequences.
  *
  * | Control sequence | Description                                                            |
  * | ---------------- | ---------------------------------------------------------------------- |
@@ -491,8 +492,7 @@ void gotoxy(cpos_t const x, cpos_t const y) {
  *
  * @note
  * - On Unix-like systems, ANSI escape sequences are used. Some terminals may not
- *   support these sequences, affecting the clearing functionality. However on Windows,
- *   this function utilizes the Windows API `cls` command.
+ *   support these sequences, affecting the clearing functionality.
  * - This function does not prevent the screen from scrolling. If you want to reset
  *   entire the screen, use the @ref rstscr() instead.
  *
