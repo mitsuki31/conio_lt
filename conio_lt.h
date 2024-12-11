@@ -20,15 +20,20 @@
  * @file conio_lt.h
  *
  * @brief `conio_lt` is a lightweight adaptation of the `<conio.h>` library,
- *        designed specifically for Unix-like systems and Termux on Android.
+ *        designed specifically for Unix-like systems, with limited compatibility
+ *        for Windows environments, and support for GCC and Clang compilers.
  *
- * This library aims to bring console manipulation functionalities to Unix-like
- * environments, providing a subset of features found in `<conio.h>`. It is tailored
- * for Unix-like systems, but in Windows environments it might behave differently
- * for several functions. For example, @ref clrscr() and @ref rstscr() may not have
- * the same effect on Windows as they do on Unix-like systems, they both utilize
- * the `cls` command on Windows. In this case, those functions will unintentionally
- * clear and reset the terminal screen.
+ * This library provides a subset of console manipulation functionalities found
+ * in the traditional `<conio.h>`, tailored to work in Unix-like systems such as
+ * Linux, macOS, and Termux on Android. It is also designed to be compatible with
+ * GCC and Clang compilers, providing an efficient and cross-platform solution.
+ * Unlike the full `conio.h`, `conio_lt` is focused on essential terminal functions,
+ * excluding more advanced features such as `window()`, making it lightweight and
+ * well-suited for terminal-based applications.
+ *
+ * The goal of the `conio_lt.h` library is to provide a focused, efficient, and
+ * cross-platform subset of console-based features suitable for terminal-based
+ * applications, while ensuring compatibility with GCC and Clang compilers.
  *
  * Available APIs
  * --------------
@@ -43,6 +48,9 @@
  *  - gotoxy(cpos_t, cpos_t)
  *  - putch(int)
  *  - ungetch(int)
+ *  - cputs(const char*)
+ *  - cgets(char*)
+ *  - cscanf(const char*, ...)
  *  - wherex()
  *  - wherey()
  *  - wherexy(cpos_t*, cpos_t*)
