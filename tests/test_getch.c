@@ -1,3 +1,9 @@
+/**
+ * @file test_getch.c
+ *
+ * @brief Test for `getch` and `getche` functions.
+ */
+
 #include <stdio.h>
 #include "../conio_lt.h"
 
@@ -33,5 +39,7 @@ int main(void) {
     putch(val);  /* Test putch */
     printf("\nInteger value: %d", val);
     printf("\nHex value: %x\n", val);
+
+    printf("\n[Test Passed]\n");
     return 0;
 }
