@@ -146,7 +146,9 @@
         || (defined(_MSC_VER) && _MSC_VER < 1600 /* < Visual C++ 2010 */))
 #warning \
   This header file may not fully support pre-C99 compilers.\
-  Consider using a C99-compliant compiler for optimal compatibility.
+  Consider using a C99-compliant compiler for optimal compatibility. --\
+  If an error occurs, consider defining the macro `_CONIO_LT_DEF_STDINT`\
+  to use a minor replacement for the `stdint.h` library.
 # else
 #  define __HAVE_STDINT_LIB
 # endif  /* C */
@@ -154,7 +156,9 @@
 # if __cplusplus < 201103L  /* C++11 */
 #warning \
   This header file may not fully support pre-C++11 compilers.\
-  Consider using a C++11 or later compiler for optimal compatibility.
+  Consider using a C++11 or later compiler for optimal compatibility. --\
+  If an error occurs, consider defining the macro `_CONIO_LT_DEF_STDINT`\
+  to use a minor replacement for the `stdint.h` library.
 # else
 #  define __HAVE_STDINT_LIB
 # endif  /* C++ */
