@@ -24,18 +24,18 @@
  *
  * This library aims to bring console manipulation functionalities to Unix-like
  * environments, providing a subset of features found in `<conio.h>`. It is tailored
- * for Unix-like systems, and its usage on Windows is not guaranteed to behave as
- * expected. Users are advised to exercise caution when using this library on
- * non-Unix environments.
- *
- * @note If you intend to run Unix-like commands on a Windows system, consider using
- *       [MSYS2](https://msys2.org) to provide a Bash shell environment. Keep in mind
- *       this approach may not fully replicate Unix-like behaviors on Windows.
+ * for Unix-like systems, but in Windows environments it might behave differently
+ * for several functions. For example, @ref clrscr() and @ref rstscr() may not have
+ * the same effect on Windows as they do on Unix-like systems, they both utilize
+ * the `cls` command on Windows. In this case, those functions will unintentionally
+ * clear and reset the terminal screen.
  *
  * Available APIs
  * --------------
  *  - clrscr()
  *  - rstscr()
+ *  - delline()
+ *  - dellines(cpos_t, cpos_t)
  *  - getch()
  *  - getche()
  *  - gotox(cpos_t)
@@ -47,11 +47,11 @@
  *  - wherey()
  *  - wherexy(cpos_t*, cpos_t*)
  *
- * @author    Ryuu Mitsuki
+ * @author    Ryuu Mitsuki <dhefam31@gmail.com>
  * @version   0.3.0-beta
- * @date      01 Des 2024
+ * @date      05 Des 2024
  * @copyright &copy; 2023 - 2024 Ryuu Mitsuki.
- *            Licensed under the GNU General Public License 3.0.
+ *            Licensed under the GNU General Public License 3.0. All rights reserved.
  */
 
 #ifndef CONIO_LT_H_
@@ -146,7 +146,9 @@
         || (defined(_MSC_VER) && _MSC_VER < 1600 /* < Visual C++ 2010 */))
 #warning \
   This header file may not fully support pre-C99 compilers.\
-  Consider using a C99-compliant compiler for optimal compatibility.
+  Consider using a C99-compliant compiler for optimal compatibility. --\
+  If an error occurs, consider defining the macro `_CONIO_LT_DEF_STDINT`\
+  to use a minor replacement for the `stdint.h` library.
 # else
 #  define __HAVE_STDINT_LIB
 # endif  /* C */
@@ -154,7 +156,9 @@
 # if __cplusplus < 201103L  /* C++11 */
 #warning \
   This header file may not fully support pre-C++11 compilers.\
-  Consider using a C++11 or later compiler for optimal compatibility.
+  Consider using a C++11 or later compiler for optimal compatibility. --\
+  If an error occurs, consider defining the macro `_CONIO_LT_DEF_STDINT`\
+  to use a minor replacement for the `stdint.h` library.
 # else
 #  define __HAVE_STDINT_LIB
 # endif  /* C++ */
@@ -205,13 +209,6 @@ typedef unsigned int            uint32_t;  /**< unsigned 32-bit */
 #endif  /* ! (__HAVE_STDINT_LIB || HAVE_STDINT_H) && _CONIO_LT_DEF_STDINT */
 /** @} */
 
-/* Handle platform-specific headers for console I/O using specific preprocessor macros */
-#if defined(__WIN_PLATFORM_32) || defined(__MINGWC_32)
-# include <windows.h>  /* Windows-specific header for terminal I/O control */
-# define __HAVE_WINDOWS_API  /**< Indicates that current environment is Windows and have Windows API (`<windows.h>`) */
-
-/*:: Minor replacement for `unistd.h` header file ::*/
-/*:: -------------------------------------------- ::*/
 /* File number of file descriptors (stdin, stdout, stderr) */
 # ifndef STDIN_FILENO
 #  define STDIN_FILENO    0  /**< File number of standard input */
@@ -224,6 +221,11 @@ typedef unsigned int            uint32_t;  /**< unsigned 32-bit */
 # ifndef STDERR_FILENO
 #  define STDERR_FILENO   2  /**< File number of standard error */
 # endif  /* STDERR_FILENO */
+
+/* Handle platform-specific headers for console I/O using specific preprocessor macros */
+#if defined(__WIN_PLATFORM_32) || defined(__MINGWC_32)
+# include <windows.h>  /* Windows-specific header for terminal I/O control */
+# define __HAVE_WINDOWS_API  /**< Indicates that current environment is Windows and have Windows API (`<windows.h>`) */
 
 /* File permissions */
 # ifndef R_OK
@@ -373,8 +375,8 @@ static int __getch(GETCH_ECHO const __echo) {
  *   - `wherexy(cpos_t*, cpos_t*)` - Retrieves the current both coordinates of the cursor position
  *                                   stored in provided pointer variables
  *
- * @param[in,out] __x  Pointer to a variable where the X-coordinate of the cursor will be stored.
- * @param[in,out] __y  Pointer to a variable where the Y-coordinate of the cursor will be stored.
+ * @param[in,out] __px  Pointer to a variable where the X-coordinate of the cursor will be stored.
+ * @param[in,out] __py  Pointer to a variable where the Y-coordinate of the cursor will be stored.
  *
  * @note For Unix-like systems, this function sends the ANSI escape sequence `"\033[6n"`
  *       to the terminal and parses the response to obtain cursor coordinates. On Windows,
@@ -387,7 +389,7 @@ static int __getch(GETCH_ECHO const __echo) {
  * @since 0.1.0
  * @see   wherexy(cpos_t*, cpos_t*)
  */
-static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
+static void __whereis_xy(cpos_t* __px, cpos_t* __py) {
     cpos_t x = 0, y = 0;  /* Variables to hold the coordinates */
 
 #ifdef __HAVE_WINDOWS_API
@@ -405,7 +407,7 @@ static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
     printf("%s[6n", ESC);
 
     /* If the input character neither equal with '0x1B' (escape character)
-     * nor '0x5B' ('['), then return (leaving the '__x' and '__y' references
+     * nor '0x5B' ('['), then return (leaving the '__px' and '__py' references
      * unmodified) because it was unable to get current position of cursor.
      */
     if ((__getch(GETCH_NO_ECHO) != 0x1B)
@@ -421,8 +423,8 @@ static void __whereis_xy(cpos_t* __x, cpos_t* __y) {
     }
 #endif  /* __HAVE_WINDOWS_API */
     /* Store and assign the cursor position */
-    *__x = x;
-    *__y = y;
+    *__px = x;
+    *__py = y;
 }
 
 
@@ -487,14 +489,12 @@ void gotoxy(cpos_t const x, cpos_t const y) {
  * By combining these control sequences in a single `printf` statement,
  * the function achieves the effect of clearing the terminal screen.
  *
- * @note - On Unix-like systems, ANSI escape sequences are used. Some terminals may not
- *         support these sequences, affecting the clearing functionality.
- *       - The function's behavior may differ in environments like **Cygwin** or **MSYS2**
- *         on Windows, and users are encouraged to be aware of such variations. In such
- *         environments, the function will use the control sequences to clear the terminal
- *         screen instead of using the `"cls"` command.
- *       - This function does not prevent the screen from scrolling. If you want to reset
- *         entire the screen, use the @ref rstscr() instead.
+ * @note
+ * - On Unix-like systems, ANSI escape sequences are used. Some terminals may not
+ *   support these sequences, affecting the clearing functionality. However on Windows,
+ *   this function utilizes the Windows API `cls` command.
+ * - This function does not prevent the screen from scrolling. If you want to reset
+ *   entire the screen, use the @ref rstscr() instead.
  *
  * @attention This function relies on system-specific commands and escape sequences, and
  *            its behavior may not be consistent across all terminals or environments.
@@ -509,6 +509,10 @@ void clrscr(void) {
  * which means it uses the Command Prompt or PowerShell
  */
 #if defined(__WIN_PLATFORM_32) && ! defined(__CYGWIN_ENV)
+    /* TODO: Refactor this to makes clrscr() function for Windows system
+              is not using the `cls` command instead clear the lines from the
+              cursor position to the start of the screen
+     */
     system("cls");  /* Simply use the built-in command */
 /* Windows system but using Cygwin or MSYS2 environment, or Unix-like systems */
 #else
@@ -540,16 +544,14 @@ void clrscr(void) {
  * the function achieves the effect of resetting and clearing the terminal
  * screen.
  *
- * @note - On Unix-like systems, ANSI escape sequences are used. Some terminals may not
- *         support these sequences, affecting the clearing functionality.
- *       - The function's behavior may differ in environments like **Cygwin** or **MSYS2**
- *         on Windows, and users are encouraged to be aware of such variations. In such
- *         environments, the function will use the control sequences to reset the terminal
- *         screen instead of using the `"cls"` command.
- *       - This function prevents the screen from scrolling by clearing the entire screen.
- *         If you only want to clear the screen without preventing scrolling and resetting,
- *         consider using the @ref clrscr() function. But in Windows systems, both
- *         functions will behave the same due to use of `"cls"` command in both functions.
+ * @note
+ * - On Unix-like systems, ANSI escape sequences are used. Some terminals may not
+ *   support these sequences, affecting the clearing functionality. However on Windows,
+ *   this function utilizes the Windows API `cls` command.
+ * - This function prevents the screen from scrolling by clearing the entire screen.
+ *   If you only want to clear the screen without preventing scrolling and resetting,
+ *   consider using the @ref clrscr() function. But in Windows systems, both
+ *   functions will behave the same due to use of `"cls"` command in both functions.
  *
  * @attention This function relies on system-specific commands and escape sequences, and
  *            its behavior may not be consistent across all terminals or environments.
@@ -570,6 +572,7 @@ void rstscr(void) {
     printf("%s[0m%sc", ESC, ESC);  /* "\033[0m\033c" */
 #endif  /* __WIN_PLATFORM_32 && ! __CYGWIN_ENV */
 }
+
 
 /**
  * @brief Pushes a character back onto the input stream.
@@ -765,6 +768,110 @@ void gotox(cpos_t const x) {
 void gotoy(cpos_t const y) {
     gotoxy(wherex(), y);
 }
+
+
+/**
+ * @brief Clears the current line in the terminal.
+ *
+ * This function clears the entire line where the cursor is currently positioned.
+ * It is a cross-platform implementation that uses Windows API on Windows systems and
+ * ANSI escape sequences on Unix-like systems.
+ *
+ * On Unix-like systems, this function uses ANSI escape sequences to manipulate the terminal.
+ * The following sequences are used:
+ *
+ * | Escape Sequence | Description                                 |
+ * |-----------------|---------------------------------------------|
+ * | `\033[2K`       | Clears the entire line                      |
+ *
+ * - `\033` - is the escape character (ASCII code 27, see @ref ESC) used to start an escape sequence.
+ * - `[2K` - is the control sequence for clearing the entire line.
+ * - `\r` - moves the cursor back to the beginning of the line.
+ *
+ * @note  For Windows systems, the function uses [`SetConsoleCursorPosition`](https://learn.microsoft.com/en-us/windows/console/setconsolecursorposition)
+ *        and [`FillConsoleOutputCharacter`](https://learn.microsoft.com/en-us/windows/console/fillconsoleoutputcharacter)
+ *        to achieve the same functionality.
+ *
+ * @pre   Ensure the console supports ANSI escape sequences for Unix-specific implementation.
+ *
+ * @since 0.3.0
+ * @see   dellines(cpos_t, cpos_t)
+ */
+void delline(void) {
+/* Windows-specific implementation */
+#ifdef __HAVE_WINDOWS_API
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    DWORD dw;
+
+    if (GetConsoleScreenBufferInfo(hConsole, &csbi)) {
+        COORD lineStart = { 0, csbi.dwCursorPosition.Y };  /* Start of the current line */
+        FillConsoleOutputCharacter(hConsole, ' ', csbi.dwSize.X, lineStart, &dw);  /* Clear the line */
+        SetConsoleCursorPosition(hConsole, lineStart);  /* Reset cursor to line start */
+    }
+#else
+    /* Unix-like systems using ANSI escape sequences */
+    printf("%s[2K\r", ESC);  /* Clear the line and reset cursor to the beginning */
+#endif  /* __HAVE_WINDOWS_API */
+    fflush(stdout);          /* Ensure immediate display */
+}
+
+/**
+ * @brief Clears multiple lines in the terminal.
+ *
+ * This function takes a range of line numbers (@p from and @p to) and clears
+ * all lines in that range. The range is inclusive, meaning that both the
+ * line at @p from and @p to are cleared. If @p from is greater than @p to,
+ * the range is swapped internally to ensure that the correct lines are cleared.
+ *
+ * The function first saves the current Y-coordinate of the cursor position
+ * and then moves the cursor to the first line in the range ( @p from ). It then
+ * iterates through the range and clears each line by calling @ref delline().
+ * After clearing the lines, the function resets the Y-coordinate of the cursor
+ * to the original position.
+ *
+ * @note
+ * This function will behave the same as @ref clrscr() if @p from set to 0 and @p to
+ * set to the returned value of @ref wherey(). However the cursor position will not be reset
+ * and will remain at the original position, unlike @ref clrscr() where the cursor position
+ * is reset to the top-left corner of the screen.
+ *
+ * @param[in] from  The starting line number to clear.
+ * @param[in] to    The ending line number to clear.
+ *
+ * @pre   Ensure the console supports ANSI escape sequences for Unix-specific implementation.
+ *
+ * @since 0.3.0
+ * @see   delline(void)
+ * @see   gotoy(cpos_t)
+ */
+void dellines(cpos_t from, cpos_t to) {
+    /* Ensure valid range */
+    if ((from < 0) || (to < 0)) {
+        fprintf(stderr,
+            "conio_lt: dellines: Position out of range (from: %d, to: %d)\n", from, to);
+        return;
+    }
+
+    /* Swap `from` and `to` if `from` is greater than `to` with XOR logic */
+    if (from > to) {
+        from ^= to; to ^= from; from ^= to;
+    }
+
+    /* Save the current Y-coordinate of cursor position */
+    cpos_t orig_y = wherey();
+    gotoy(from);  /* Move first the cursor to `from` line */
+
+    cpos_t i;
+    for (i = from; i <= to; i++) {
+        gotoy(i);  /* Move the cursor to `i` line */
+        /* Clear the current line and move the cursor to the start of the line */
+        delline();
+    }
+    /* Reset the Y-coordinate of cursor after clearing lines */
+    gotoy(orig_y);
+}
+
 
 #ifdef __cplusplus
 }  /* extern "C" */
