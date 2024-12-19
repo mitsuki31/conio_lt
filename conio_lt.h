@@ -43,6 +43,7 @@
  *  - dellines(cpos_t, cpos_t)
  *  - getch()
  *  - getche()
+ *  - kbhit()
  *  - gotox(cpos_t)
  *  - gotoy(cpos_t)
  *  - gotoxy(cpos_t, cpos_t)
@@ -73,6 +74,18 @@
 /* C standard I/O header */
 #include <stdio.h>
 #include <stdarg.h>
+
+/* To ensure compatibility between C and C++, preventing name mangling in C++ */
+#ifdef __cplusplus
+#define _CONIO_C_DECL_         extern "C"
+#define _CONIO_BEGIN_C_DECLS_  extern "C" {
+#define _CONIO_END_C_DECLS_    }
+#else
+/* ... these macros are transparent when compiling C code */
+#define _CONIO_C_DECL_         extern
+#define _CONIO_BEGIN_C_DECLS_
+#define _CONIO_END_C_DECLS_
+#endif  /* __cplusplus */
 
 #if defined(unix) || defined(__unix__) || defined(__unix)
 #  define __UNIX_PLATFORM
@@ -255,19 +268,10 @@ typedef unsigned int            uint32_t;  /**< unsigned 32-bit */
 #  include <termios.h>  /* POSIX header for terminal I/O control */
 #endif  /* _WIN32 || __WIN32__ || __MINGW32__ */
 
-/**
- * @brief Enumeration representing the echo behavior for the @ref __getch function.
- *
- * This enum enhances readability and ensures that the intended behavior is clear
- * when using the @ref __getch function to read characters from the terminal.
- *
- * @since 0.3.0
- * @see   __getch(GETCH_ECHO)
- */
-typedef enum {
-    GETCH_NO_ECHO,   /**< Represents the option to read a character without send buffer to the terminal. */
-    GETCH_USE_ECHO   /**< Represents the option to read a character with send buffer to the terminal. */
-} GETCH_ECHO;
+/* Include the 'fcntl.h' header if the compiler have it */
+#if defined(__MINGWC_32) || defined(__UNIX_PLATFORM)
+# include <fcntl.h>
+#endif
 
 /** @{ */
 /**
@@ -297,9 +301,21 @@ typedef
  */
 #define ESC  "\033"
 
-#ifdef __cplusplus
-extern "C" {
-#endif   /* __cplusplus */
+_CONIO_BEGIN_C_DECLS_
+
+/**
+ * @brief Enumeration representing the echo behavior for the @ref __getch function.
+ *
+ * This enum enhances readability and ensures that the intended behavior is clear
+ * when using the @ref __getch function to read characters from the terminal.
+ *
+ * @since 0.3.0
+ * @see   __getch(GETCH_ECHO)
+ */
+typedef enum {
+    GETCH_NO_ECHO,   /**< Represents the option to read a character without send buffer to the terminal. */
+    GETCH_USE_ECHO   /**< Represents the option to read a character with send buffer to the terminal. */
+} GETCH_ECHO;
 
 /**
  * @brief Retrieves a single character from the standard input without echoing.
@@ -651,6 +667,90 @@ int getche(void) {
 }
 
 /**
+ * @brief Checks if a keyboard key has been pressed.
+ *
+ * This function provides cross-platform support for detecting key presses.
+ * On Windows, it can detect all input events, including non-character keys
+ * like *Num Lock* and *Scroll Lock*. On Unix-like systems, it checks for input
+ * availability on the standard input stream (`stdin`), so it won't detect
+ * non-character key events.
+ *
+ * On Windows, the function uses the Windows Console API to check for key events
+ * in the console input buffer. It peeks at the console input events and checks
+ * if there is a key press event. If a key press event is detected, it consumes
+ * the event from the buffer and returns a non-zero value.
+ *
+ * On Unix-like systems, the function uses the `termios` library to temporarily
+ * disable canonical mode and echo, making the terminal input non-blocking. It
+ * then checks if a character is available in the input buffer. If a character
+ * is available, it pushes the character back onto the input stream and returns
+ * a non-zero value.
+ *
+ * @note
+ * For more advanced key detection (e.g., *Num Lock*, *Scroll Lock*) on Unix-like
+ * systems, consider using libraries like [`libevdev`](https://www.freedesktop.org/wiki/Software/libevdev/)
+ * or accessing `/dev/input` devices directly (requires root permissions).
+ *
+ * @return Non-zero value if a key has been pressed; zero otherwise.
+ *
+ * @since  0.3.0
+ */
+int kbhit(void) {
+#if defined(__HAVE_WINDOWS_API)
+    /* Windows-specific implementation using Windows API */
+    HANDLE hConsole = GetStdHandle(STD_INPUT_HANDLE);
+    if (hConsole == INVALID_HANDLE_VALUE) return 0;
+
+    DWORD events = 0;
+    INPUT_RECORD inputRecord;
+    if (!GetNumberOfConsoleInputEvents(hConsole, &events) || events == 0) return 0;  /* No input events */
+
+    /* Peek at console input events */
+    PeekConsoleInput(hConsole, &inputRecord, 1, &events);
+
+    /* Check if the event is a key press */
+    if (events > 0 && inputRecord.EventType == KEY_EVENT && inputRecord.Event.KeyEvent.bKeyDown) {
+        /* Consume the event from the buffer */
+        ReadConsoleInput(hConsole, &inputRecord, 1, &events);
+        return 1;
+    }
+
+    /* Clear the input buffer of any other events */
+    FlushConsoleInputBuffer(hConsole);
+#else
+    /* Unix-specific implementation using termios */
+    struct termios oldt, newt;
+    int ch;
+    int oldf;
+
+    /* Save the old terminal settings */
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+
+    /* Disable canonical mode and echo */
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+    /* Set the file descriptor to non-blocking */
+    oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
+
+    ch = getchar();
+
+    /* Restore the old settings */
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    fcntl(STDIN_FILENO, F_SETFL, oldf);
+
+    if (ch != EOF) {
+        ungetc(ch, stdin);
+        return 1;
+    }
+#endif
+
+    return 0;
+}
+
+/**
  * @brief Retrieves the current X-coordinate of the cursor on the terminal screen.
  *
  * This function retrieves the current X-coordinate of the cursor on the terminal screen.
@@ -973,10 +1073,8 @@ int cscanf(char* const fmt, ...) {
     return result;
 }
 
+_CONIO_END_C_DECLS_
 
-#ifdef __cplusplus
-}  /* extern "C" */
-#endif  /* __cplusplus */
 
 #undef __UNIX_PLATFORM
 #undef __UNIX_PLATFORM_ANDRO
@@ -988,5 +1086,8 @@ int cscanf(char* const fmt, ...) {
 #undef __MSYS_ENV
 #undef __HAVE_STDINT_LIB
 #undef __HAVE_WINDOWS_API
+#undef _CONIO_C_DECL_
+#undef _CONIO_BEGIN_C_DECLS_
+#undef _CONIO_END_C_DECLS_
 
 #endif /* CONIO_LT_H_ */
