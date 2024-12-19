@@ -255,19 +255,10 @@ typedef unsigned int            uint32_t;  /**< unsigned 32-bit */
 #  include <termios.h>  /* POSIX header for terminal I/O control */
 #endif  /* _WIN32 || __WIN32__ || __MINGW32__ */
 
-/**
- * @brief Enumeration representing the echo behavior for the @ref __getch function.
- *
- * This enum enhances readability and ensures that the intended behavior is clear
- * when using the @ref __getch function to read characters from the terminal.
- *
- * @since 0.3.0
- * @see   __getch(GETCH_ECHO)
- */
-typedef enum {
-    GETCH_NO_ECHO,   /**< Represents the option to read a character without send buffer to the terminal. */
-    GETCH_USE_ECHO   /**< Represents the option to read a character with send buffer to the terminal. */
-} GETCH_ECHO;
+/* Include the 'fcntl.h' header if the compiler have it */
+#if defined(__MINGWC_32) || defined(__UNIX_PLATFORM)
+# include <fcntl.h>
+#endif
 
 /** @{ */
 /**
@@ -300,6 +291,20 @@ typedef
 #ifdef __cplusplus
 extern "C" {
 #endif   /* __cplusplus */
+
+/**
+ * @brief Enumeration representing the echo behavior for the @ref __getch function.
+ *
+ * This enum enhances readability and ensures that the intended behavior is clear
+ * when using the @ref __getch function to read characters from the terminal.
+ *
+ * @since 0.3.0
+ * @see   __getch(GETCH_ECHO)
+ */
+typedef enum {
+    GETCH_NO_ECHO,   /**< Represents the option to read a character without send buffer to the terminal. */
+    GETCH_USE_ECHO   /**< Represents the option to read a character with send buffer to the terminal. */
+} GETCH_ECHO;
 
 /**
  * @brief Retrieves a single character from the standard input without echoing.
@@ -648,6 +653,80 @@ int getch(void) {
  */
 int getche(void) {
     return __getch(GETCH_USE_ECHO);  /* GETCH_USE_ECHO means with echoing input */
+}
+
+/**
+ * @brief Checks if a keyboard key has been pressed.
+ *
+ * This function provides cross-platform support for detecting key presses.
+ * On Windows, it can detect all input events, including non-character keys
+ * like *Num Lock* and *Scroll Lock*. On Unix-like systems, it checks for input
+ * availability on the standard input stream (`stdin`), so it won't detect
+ * non-character key events.
+ *
+ * @note
+ * For more advanced key detection (e.g., *Num Lock*, *Scroll Lock*) on Unix-like
+ * systems, consider using libraries like [`libevdev`](https://www.freedesktop.org/wiki/Software/libevdev/)
+ * or accessing `/dev/input` devices directly (requires root permissions).
+ *
+ * @return Non-zero value if a key has been pressed; zero otherwise.
+ *
+ * @since  0.3.0
+ */
+int kbhit(void) {
+#if defined(__HAVE_WINDOWS_API)
+
+    /* Windows-specific implementation using Windows API */
+    HANDLE hConsole = GetStdHandle(STD_INPUT_HANDLE);
+    if (hConsole == INVALID_HANDLE_VALUE) return 0;
+
+    DWORD events = 0;
+    INPUT_RECORD inputRecord;
+    if (!GetNumberOfConsoleInputEvents(hConsole, &events) || events == 0) return 0;  /* No input events */
+
+    /* Peek at console input events */
+    PeekConsoleInput(hConsole, &inputRecord, 1, &events);
+
+    /* Check if the event is a key press */
+    if (events > 0 && inputRecord.EventType == KEY_EVENT && inputRecord.Event.KeyEvent.bKeyDown) {
+        /* Consume the event from the buffer */
+        ReadConsoleInput(hConsole, &inputRecord, 1, &events);
+        return 1;
+    }
+
+    /* Clear the input buffer of any other events */
+    FlushConsoleInputBuffer(hConsole);
+#else
+    /* Unix-specific implementation using termios */
+    struct termios oldt, newt;
+    int ch;
+    int oldf;
+
+    /* Save the old terminal settings */
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+
+    /* Disable canonical mode and echo */
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+    /* Set the file descriptor to non-blocking */
+    oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
+
+    ch = getchar();
+
+    /* Restore the old settings */
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    fcntl(STDIN_FILENO, F_SETFL, oldf);
+
+    if (ch != EOF) {
+        ungetc(ch, stdin);
+        return 1;
+    }
+#endif
+
+    return 0;
 }
 
 /**
