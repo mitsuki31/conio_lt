@@ -74,6 +74,18 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+/* To ensure compatibility between C and C++, preventing name mangling in C++ */
+#ifdef __cplusplus
+#define _CONIO_C_DECL_         extern "C"
+#define _CONIO_BEGIN_C_DECLS_  extern "C" {
+#define _CONIO_END_C_DECLS_    }
+#else
+/* ... these macros are transparent when compiling C code */
+#define _CONIO_C_DECL_         extern
+#define _CONIO_BEGIN_C_DECLS_
+#define _CONIO_END_C_DECLS_
+#endif  /* __cplusplus */
+
 #if defined(unix) || defined(__unix__) || defined(__unix)
 #  define __UNIX_PLATFORM
 #  ifdef __ANDROID__  /* For Android */
@@ -288,9 +300,7 @@ typedef
  */
 #define ESC  "\033"
 
-#ifdef __cplusplus
-extern "C" {
-#endif   /* __cplusplus */
+_CONIO_BEGIN_C_DECLS_
 
 /**
  * @brief Enumeration representing the echo behavior for the @ref __getch function.
@@ -1052,10 +1062,8 @@ int cscanf(char* const fmt, ...) {
     return result;
 }
 
+_CONIO_END_C_DECLS_
 
-#ifdef __cplusplus
-}  /* extern "C" */
-#endif  /* __cplusplus */
 
 #undef __UNIX_PLATFORM
 #undef __UNIX_PLATFORM_ANDRO
@@ -1067,5 +1075,8 @@ int cscanf(char* const fmt, ...) {
 #undef __MSYS_ENV
 #undef __HAVE_STDINT_LIB
 #undef __HAVE_WINDOWS_API
+#undef _CONIO_C_DECL_
+#undef _CONIO_BEGIN_C_DECLS_
+#undef _CONIO_END_C_DECLS_
 
 #endif /* CONIO_LT_H_ */
