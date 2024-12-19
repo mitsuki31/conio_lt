@@ -43,6 +43,7 @@
  *  - dellines(cpos_t, cpos_t)
  *  - getch()
  *  - getche()
+ *  - kbhit()
  *  - gotox(cpos_t)
  *  - gotoy(cpos_t)
  *  - gotoxy(cpos_t, cpos_t)
@@ -674,6 +675,17 @@ int getche(void) {
  * availability on the standard input stream (`stdin`), so it won't detect
  * non-character key events.
  *
+ * On Windows, the function uses the Windows Console API to check for key events
+ * in the console input buffer. It peeks at the console input events and checks
+ * if there is a key press event. If a key press event is detected, it consumes
+ * the event from the buffer and returns a non-zero value.
+ *
+ * On Unix-like systems, the function uses the `termios` library to temporarily
+ * disable canonical mode and echo, making the terminal input non-blocking. It
+ * then checks if a character is available in the input buffer. If a character
+ * is available, it pushes the character back onto the input stream and returns
+ * a non-zero value.
+ *
  * @note
  * For more advanced key detection (e.g., *Num Lock*, *Scroll Lock*) on Unix-like
  * systems, consider using libraries like [`libevdev`](https://www.freedesktop.org/wiki/Software/libevdev/)
@@ -685,7 +697,6 @@ int getche(void) {
  */
 int kbhit(void) {
 #if defined(__HAVE_WINDOWS_API)
-
     /* Windows-specific implementation using Windows API */
     HANDLE hConsole = GetStdHandle(STD_INPUT_HANDLE);
     if (hConsole == INVALID_HANDLE_VALUE) return 0;
